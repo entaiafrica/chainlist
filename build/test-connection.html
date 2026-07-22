@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MetaMask Connection Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+        .box { background: #000; border: 1px solid #0f0; padding: 15px; margin: 10px 0; }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+        .info { color: #00f; }
+        button { background: #0f0; color: #000; border: none; padding: 10px 20px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0a0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 MetaMask Connection Diagnostic</h1>
+    
+    <div class="box">
+        <h3>Step 1: Check MetaMask</h3>
+        <div id="metamask-check"></div>
+        <button onclick="checkMetaMask()">Check MetaMask</button>
+    </div>
+    
+    <div class="box">
+        <h3>Step 2: Check Network</h3>
+        <div id="network-check"></div>
+        <button onclick="checkNetwork()">Check Network</button>
+    </div>
+    
+    <div class="box">
+        <h3>Step 3: Check Accounts</h3>
+        <div id="account-check"></div>
+        <button onclick="checkAccounts()">Check Accounts</button>
+    </div>
+    
+    <div class="box">
+        <h3>Step 4: Fetch Balances</h3>
+        <div id="balance-check"></div>
+        <button onclick="fetchBalances()">Fetch Balances</button>
+    </div>
+    
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+    <script>
+        function log(element, message, type = 'info') {
+            const div = document.getElementById(element);
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            div.innerHTML += `<div class="${className}">${message}</div>`;
+        }
+        
+        function clear(element) {
+            document.getElementById(element).innerHTML = '';
+        }
+        
+        async function checkMetaMask() {
+            clear('metamask-check');
+            if (typeof window.ethereum !== 'undefined') {
+                log('metamask-check', '✓ MetaMask is installed', 'success');
+                log('metamask-check', 'Provider: ' + (window.ethereum.isMetaMask ? 'MetaMask' : 'Other'), 'info');
+            } else {
+                log('metamask-check', '✗ MetaMask not found!', 'error');
+                log('metamask-check', 'Install MetaMask: https://metamask.io', 'error');
+            }
+        }
+        
+        async function checkNetwork() {
+            clear('network-check');
+            if (!window.ethereum) {
+                log('network-check', '✗ MetaMask not found', 'error');
+                return;
+            }
+            
+            try {
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                const chainIdDec = parseInt(chainId, 16);
+                log('network-check', 'Chain ID: ' + chainIdDec, 'info');
+                
+                if (chainIdDec === 1337) {
+                    log('network-check', '✓ Connected to correct network (1337)', 'success');
+                } else {
+                    log('network-check', '✗ WRONG NETWORK!', 'error');
+                    log('network-check', 'Expected: 1337 (Loyalty Rewards Chain)', 'error');
+                    log('network-check', 'Got: ' + chainIdDec, 'error');
+                    log('network-check', '', 'info');
+                    log('network-check', 'FIX: Open MetaMask → Switch to Loyalty Rewards Chain', 'error');
+                }
+                
+                // Try to get network details
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const network = await provider.getNetwork();
+                log('network-check', 'Network Name: ' + network.name, 'info');
+                log('network-check', 'Chain ID: ' + network.chainId, 'info');
+            } catch (error) {
+                log('network-check', '✗ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function checkAccounts() {
+            clear('account-check');
+            if (!window.ethereum) {
+                log('account-check', '✗ MetaMask not found', 'error');
+                return;
+            }
+            
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length === 0) {
+                    log('account-check', '✗ No accounts connected', 'error');
+                    log('account-check', 'FIX: Click "Connect Wallet" button', 'error');
+                    
+                    // Try to request accounts
+                    log('account-check', 'Attempting to connect...', 'info');
+                    const newAccounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    if (newAccounts.length > 0) {
+                        log('account-check', '✓ Connected: ' + newAccounts[0], 'success');
+                    }
+                } else {
+                    log('account-check', '✓ Connected accounts: ' + accounts.length, 'success');
+                    accounts.forEach((account, i) => {
+                        log('account-check', `Account ${i + 1}: ${account}`, 'info');
+                    });
+                }
+            } catch (error) {
+                log('account-check', '✗ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function fetchBalances() {
+            clear('balance-check');
+            if (!window.ethereum) {
+                log('balance-check', '✗ MetaMask not found', 'error');
+                return;
+            }
+            
+            try {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const accounts = await provider.listAccounts();
+                
+                if (accounts.length === 0) {
+                    log('balance-check', '✗ No accounts connected', 'error');
+                    return;
+                }
+                
+                const address = accounts[0];
+                log('balance-check', 'Fetching for: ' + address, 'info');
+                
+                // Get ETH balance
+                const ethBalance = await provider.getBalance(address);
+                log('balance-check', 'ETH Balance: ' + ethers.utils.formatEther(ethBalance) + ' ETH', 'success');
+                
+                // Get BRK balance
+                const BRK_ADDRESS = '0x7ab30bf11a35926426671155B6113959F6b7FC9A';
+                const brkAbi = ['function balanceOf(address) view returns (uint256)', 'function symbol() view returns (string)'];
+                const brkContract = new ethers.Contract(BRK_ADDRESS, brkAbi, provider);
+                
+                const brkBalance = await brkContract.balanceOf(address);
+                const symbol = await brkContract.symbol();
+                log('balance-check', symbol + ' Balance: ' + ethers.utils.formatEther(brkBalance) + ' ' + symbol, 'success');
+                
+                // Get NFT balances
+                const MARKETPLACE_ADDRESS = '0x0165878A594ca255338adfa4d48449f69242Eb8F';
+                const nftAbi = ['function balanceOf(address, uint256) view returns (uint256)'];
+                const marketplace = new ethers.Contract(MARKETPLACE_ADDRESS, nftAbi, provider);
+                
+                const token1Balance = await marketplace.balanceOf(address, 1);
+                const token2Balance = await marketplace.balanceOf(address, 2);
+                log('balance-check', 'NFT Token 1: ' + token1Balance.toString() + ' bricks', 'success');
+                log('balance-check', 'NFT Token 2: ' + token2Balance.toString() + ' bricks', 'success');
+                
+            } catch (error) {
+                log('balance-check', '✗ Error: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+        
+        // Auto-run checks on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkMetaMask();
+                setTimeout(() => checkNetwork(), 500);
+                setTimeout(() => checkAccounts(), 1000);
+            }, 100);
+        });
+    </script>
+</body>
+</html>

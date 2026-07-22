@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Diagnostic</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .log {
+            margin: 10px 0;
+            padding: 10px;
+            background: #000;
+            border-left: 3px solid #00ff00;
+        }
+        .error {
+            border-left-color: #ff0000;
+            color: #ff0000;
+        }
+        .success {
+            border-left-color: #00ff00;
+            color: #00ff00;
+        }
+        .warning {
+            border-left-color: #ffaa00;
+            color: #ffaa00;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+    </style>
+</head>
+<body>
+    <h1>FirstBrick Blockchain Diagnostic</h1>
+    <button onclick="runDiagnostic()">Run Diagnostic</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+    <div id="logs"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script>
+        const MARKETPLACE_ADDRESS = "0x9E545E3C0baAB3E08CdfD552C960A1050f373042";
+        const RPC_URL = "https://rpc.entailabs.com";
+
+        const MARKETPLACE_ABI = [
+            "function getPropertyData(uint256 tokenId) view returns (uint256 totalBricks, uint256 bricksAvailable, uint256 pricePerBrick, uint256 depositAmount, uint256 otpDeadline, uint8 status)",
+            "function uri(uint256 tokenId) view returns (string)",
+            "function balanceOf(address account, uint256 id) view returns (uint256)",
+            "function propertyCreator(uint256) view returns (address)",
+            "function propertyBuyer(uint256) view returns (address)"
+        ];
+
+        function log(message, type = 'log') {
+            const logsDiv = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log ${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(logEntry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function runDiagnostic() {
+            clearLogs();
+            log('Starting diagnostic...', 'success');
+
+            try {
+                // Step 1: Check provider connection
+                log('Step 1: Connecting to blockchain...', 'warning');
+                const provider = new ethers.providers.StaticJsonRpcProvider(RPC_URL, {
+                    chainId: 1337,
+                    name: 'BrickChain'
+                });
+
+                try {
+                    const network = await provider.getNetwork();
+                    log(`✓ Connected to network: Chain ID ${network.chainId}`, 'success');
+                } catch (err) {
+                    log(`⚠ Network detection failed: ${err.message}`, 'warning');
+                    log('Continuing anyway...', 'warning');
+                }
+
+                // Step 2: Check contract
+                log('Step 2: Connecting to marketplace contract...', 'warning');
+                const contract = new ethers.Contract(MARKETPLACE_ADDRESS, MARKETPLACE_ABI, provider);
+                log(`✓ Contract address: ${MARKETPLACE_ADDRESS}`, 'success');
+
+                // Step 3: Scan for properties
+                log('Step 3: Scanning for properties (Token IDs 1-10)...', 'warning');
+
+                let propertiesFound = 0;
+
+                for (let tokenId = 1; tokenId <= 10; tokenId++) {
+                    try {
+                        log(`Checking Token ${tokenId}...`, 'warning');
+                        const propertyData = await contract.getPropertyData(tokenId);
+
+                        const totalBricks = propertyData.totalBricks.toString();
+                        const available = propertyData.bricksAvailable.toString();
+
+                        if (totalBricks === "0") {
+                            log(`  Token ${tokenId}: Not found (totalBricks = 0)`, 'log');
+                            continue;
+                        }
+
+                        propertiesFound++;
+                        log(`  ✓ Token ${tokenId} FOUND!`, 'success');
+                        log(`    Total Bricks: ${totalBricks}`, 'success');
+                        log(`    Available: ${available}`, 'success');
+
+                        // Try to get metadata
+                        try {
+                            const uri = await contract.uri(tokenId);
+                            log(`    Metadata URI: ${uri}`, 'success');
+
+                            // Try to fetch metadata
+                            log(`    Fetching metadata from IPFS...`, 'warning');
+                            const response = await fetch(uri);
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}`);
+                            }
+
+                            const metadata = await response.json();
+                            log(`    ✓ Metadata loaded: ${metadata.name}`, 'success');
+
+                            if (metadata.image || metadata.properties?.images?.[0]) {
+                                const imageUrl = metadata.image || metadata.properties.images[0];
+                                log(`    Image URL: ${imageUrl}`, 'success');
+                            }
+
+                        } catch (metaErr) {
+                            log(`    ✗ Metadata fetch failed: ${metaErr.message}`, 'error');
+                        }
+
+                    } catch (err) {
+                        if (err.message.includes("totalBricks")) {
+                            log(`  Token ${tokenId}: Not found`, 'log');
+                        } else {
+                            log(`  Token ${tokenId}: Error - ${err.message}`, 'error');
+                        }
+                    }
+                }
+
+                // Summary
+                log('', 'log');
+                log('=== DIAGNOSTIC COMPLETE ===', 'warning');
+                log(`Properties found: ${propertiesFound}`, propertiesFound > 0 ? 'success' : 'error');
+
+                if (propertiesFound === 0) {
+                    log('', 'log');
+                    log('⚠ NO PROPERTIES FOUND!', 'error');
+                    log('Possible reasons:', 'error');
+                    log('1. No properties have been minted yet', 'error');
+                    log('2. Wrong contract address', 'error');
+                    log('3. Properties minted with different token IDs', 'error');
+                } else {
+                    log('', 'log');
+                    log(`✓ Found ${propertiesFound} properties on blockchain!`, 'success');
+                    log('If properties are not showing in the app, the issue is in the frontend code.', 'warning');
+                }
+
+            } catch (err) {
+                log(`✗ FATAL ERROR: ${err.message}`, 'error');
+                log(err.stack || '', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

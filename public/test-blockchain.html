@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blockchain Connection Test</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.6.umd.min.js"></script>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .box {
+            background: #000;
+            border: 2px solid #00ff00;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .info { color: #ffff00; }
+    </style>
+</head>
+<body>
+    <h1>🔍 FirstBrick Blockchain Diagnostic</h1>
+
+    <div class="box">
+        <h3>Step 1: Check MetaMask</h3>
+        <button onclick="checkMetaMask()">Check MetaMask</button>
+        <div id="metamask-result"></div>
+    </div>
+
+    <div class="box">
+        <h3>Step 2: Check Network</h3>
+        <button onclick="checkNetwork()">Check Network</button>
+        <div id="network-result"></div>
+    </div>
+
+    <div class="box">
+        <h3>Step 3: Check Contract</h3>
+        <button onclick="checkContract()">Check Contract</button>
+        <div id="contract-result"></div>
+    </div>
+
+    <div class="box">
+        <h3>Step 4: Check Wallet Balance</h3>
+        <button onclick="checkBalance()">Check Balance</button>
+        <div id="balance-result"></div>
+    </div>
+
+    <div class="box">
+        <h3>Step 5: Load Properties</h3>
+        <button onclick="loadProperties()">Load Properties</button>
+        <div id="properties-result"></div>
+    </div>
+
+    <script>
+        const CONTRACT_ADDRESS = "0x68B1D87F95878fE05B998F19b66F4baba5De1aed";
+        const BRK_TOKEN = "0x7ab30bf11a35926426671155B6113959F6b7FC9A";
+        const EXPECTED_CHAIN_ID = 1337;
+
+        let provider, signer, account;
+
+        async function checkMetaMask() {
+            const result = document.getElementById('metamask-result');
+            result.innerHTML = "Checking...";
+
+            if (typeof window.ethereum === 'undefined') {
+                result.innerHTML = '<span class="error">❌ MetaMask not found! Please install MetaMask.</span>';
+                return;
+            }
+
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                account = accounts[0];
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+
+                result.innerHTML = `<span class="success">✅ MetaMask connected</span><br>` +
+                    `Account: <b>${account}</b>`;
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+
+        async function checkNetwork() {
+            const result = document.getElementById('network-result');
+            result.innerHTML = "Checking...";
+
+            if (!provider) {
+                result.innerHTML = '<span class="error">❌ Connect MetaMask first!</span>';
+                return;
+            }
+
+            try {
+                const network = await provider.getNetwork();
+                const chainId = network.chainId;
+
+                if (chainId === EXPECTED_CHAIN_ID) {
+                    result.innerHTML = `<span class="success">✅ Correct network!</span><br>` +
+                        `Chain ID: <b>${chainId}</b><br>` +
+                        `Network: Loyalty Rewards Chain`;
+                } else {
+                    result.innerHTML = `<span class="error">❌ Wrong network!</span><br>` +
+                        `Current Chain ID: <b>${chainId}</b><br>` +
+                        `Expected Chain ID: <b>${EXPECTED_CHAIN_ID}</b><br><br>` +
+                        `<span class="info">Please switch to Loyalty Rewards Chain in MetaMask!</span>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+
+        async function checkContract() {
+            const result = document.getElementById('contract-result');
+            result.innerHTML = "Checking...";
+
+            if (!provider) {
+                result.innerHTML = '<span class="error">❌ Connect MetaMask first!</span>';
+                return;
+            }
+
+            try {
+                const code = await provider.getCode(CONTRACT_ADDRESS);
+
+                if (code === '0x') {
+                    result.innerHTML = `<span class="error">❌ Contract not found at address!</span><br>` +
+                        `Address: ${CONTRACT_ADDRESS}`;
+                } else {
+                    result.innerHTML = `<span class="success">✅ Contract exists!</span><br>` +
+                        `Address: <b>${CONTRACT_ADDRESS}</b><br>` +
+                        `Code size: ${code.length} bytes`;
+                }
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+
+        async function checkBalance() {
+            const result = document.getElementById('balance-result');
+            result.innerHTML = "Checking...";
+
+            if (!provider || !account) {
+                result.innerHTML = '<span class="error">❌ Connect MetaMask first!</span>';
+                return;
+            }
+
+            try {
+                // Check ETH balance
+                const ethBalance = await provider.getBalance(account);
+                const ethFormatted = ethers.utils.formatEther(ethBalance);
+
+                // Check BRK balance
+                const brkAbi = ["function balanceOf(address) view returns (uint256)"];
+                const brkContract = new ethers.Contract(BRK_TOKEN, brkAbi, provider);
+                const brkBalance = await brkContract.balanceOf(account);
+                const brkFormatted = ethers.utils.formatEther(brkBalance);
+
+                result.innerHTML = `<span class="success">✅ Balances retrieved!</span><br>` +
+                    `Account: <b>${account}</b><br>` +
+                    `ETH: <b>${parseFloat(ethFormatted).toFixed(4)} ETH</b><br>` +
+                    `BRK: <b>${parseFloat(brkFormatted).toLocaleString()} BRK</b>`;
+
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+
+        async function loadProperties() {
+            const result = document.getElementById('properties-result');
+            result.innerHTML = "Loading properties...";
+
+            if (!provider) {
+                result.innerHTML = '<span class="error">❌ Connect MetaMask first!</span>';
+                return;
+            }
+
+            try {
+                const abi = [
+                    "function getPropertyData(uint256) view returns (tuple(uint256 totalBricks, uint256 bricksAvailable, uint256 pricePerBrick, uint256 depositAmount, uint256 otpDeadline, uint8 status))",
+                    "function uri(uint256) view returns (string)",
+                    "function propertyTrustWallet(uint256) view returns (address)"
+                ];
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, provider);
+
+                let html = '<span class="success">✅ Scanning properties...</span><br><br>';
+                let foundCount = 0;
+
+                for (let tokenId = 1; tokenId <= 10; tokenId++) {
+                    try {
+                        const prop = await contract.getPropertyData(tokenId);
+
+                        if (prop.totalBricks.eq(0)) {
+                            continue;
+                        }
+
+                        foundCount++;
+                        const status = prop.status === 0 ? "PENDING" : "ACTIVE";
+                        const statusClass = prop.status === 1 ? "success" : "info";
+                        const trustWallet = await contract.propertyTrustWallet(tokenId);
+                        const uri = await contract.uri(tokenId);
+
+                        html += `<div style="border: 1px solid #00ff00; padding: 10px; margin: 5px 0;">` +
+                            `<b>Property ${tokenId}</b><br>` +
+                            `Status: <span class="${statusClass}">${status}</span><br>` +
+                            `Total Bricks: ${prop.totalBricks.toString()}<br>` +
+                            `Available: ${prop.bricksAvailable.toString()}<br>` +
+                            `Price: ${ethers.utils.formatEther(prop.pricePerBrick)} BRK<br>` +
+                            `Trust Wallet: ${trustWallet}<br>` +
+                            `Metadata: ${uri}<br>` +
+                            `</div>`;
+
+                    } catch (err) {
+                        // Property doesn't exist, skip
+                    }
+                }
+
+                if (foundCount === 0) {
+                    html += '<span class="error">❌ No properties found on contract!</span>';
+                } else {
+                    html += `<br><span class="success">Found ${foundCount} properties</span>`;
+                }
+
+                result.innerHTML = html;
+
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

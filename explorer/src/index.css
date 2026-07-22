@@ -1,0 +1,184 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo+Play:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 282 69% 59%; /* FirstBrick purple #9D4EDD */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 27 96% 61%; /* FirstBrick orange #FF8C42 */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 282 69% 59%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 282 69% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 27 96% 61%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 282 69% 59%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Cairo Play', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Glassmorphism utilities */
+@layer utilities {
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+
+  .glass-dark {
+    @apply bg-black/10 backdrop-blur-md border border-white/10;
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, #9D4EDD 0%, #FF8C42 100%);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #9D4EDD 0%, #FF8C42 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-border {
+    border-image: linear-gradient(135deg, #9D4EDD 0%, #FF8C42 100%) 1;
+  }
+
+  /* Shimmer effect for loading states */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.2) 20%,
+      rgba(255, 255, 255, 0.5) 60%,
+      rgba(255, 255, 255, 0)
+    );
+    animation: shimmer 2s infinite;
+    background-size: 1000px 100%;
+  }
+
+  /* Smooth scrollbar styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-muted rounded-lg;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-primary/50 rounded-lg;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary;
+  }
+
+  /* Monospace font for addresses and hashes */
+  .font-mono {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  }
+
+  /* Copy button hover effect */
+  .copy-button {
+    @apply transition-all duration-200 hover:scale-110 active:scale-95;
+  }
+}
+
+/* Custom animations for blockchain explorer */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Transaction status colors */
+.tx-success {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.tx-failed {
+  @apply text-red-600 dark:text-red-400;
+}
+
+.tx-pending {
+  @apply text-yellow-600 dark:text-yellow-400;
+}
+
+/* Wallet address highlighting */
+.address-highlight {
+  @apply bg-primary/10 px-2 py-1 rounded font-mono text-sm;
+}
+
+/* Timestamp styling */
+.timestamp {
+  @apply text-muted-foreground text-sm;
+}
+
+/* MetaMask integration styles */
+.metamask-button {
+  @apply flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all;
+  @apply bg-gradient-to-r from-[#F6851B] to-[#E2761B] text-white;
+  @apply hover:shadow-lg hover:scale-105 active:scale-95;
+}
+
+.wallet-connected {
+  @apply border-2 border-green-500 shadow-lg shadow-green-500/20;
+}

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check Network Connection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .code {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Network Connection Check</h1>
+    <button onclick="checkNetwork()">Check Current Network</button>
+
+    <div id="status"></div>
+
+    <script>
+        const PERSISTENT_RPC = "http://rpc.entailabs.com:8545";
+        const LOCALHOST_RPC = "http://127.0.0.1:8545";
+        const CONTRACT_ADDRESS = "0x0165878A594ca255338adfa4d48449f69242Eb8F";
+
+        async function checkNetwork() {
+            const statusDiv = document.getElementById('status');
+
+            if (typeof window.ethereum === 'undefined') {
+                statusDiv.innerHTML = `
+                    <div class="status error">
+                        <h2>❌ MetaMask Not Found</h2>
+                        <p>Please install MetaMask extension.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                // Connect to MetaMask
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                const chainId = await ethereum.request({ method: 'eth_chainId' });
+                const networkVersion = await ethereum.request({ method: 'net_version' });
+
+                statusDiv.innerHTML = `
+                    <div class="status warning">
+                        <h2>📊 Current Connection</h2>
+                        <p><strong>Wallet:</strong> ${accounts[0]}</p>
+                        <p><strong>Chain ID:</strong> ${parseInt(chainId, 16)}</p>
+                        <p><strong>Network Version:</strong> ${networkVersion}</p>
+                    </div>
+                `;
+
+                // Check if connected to correct network
+                if (parseInt(chainId, 16) !== 1337) {
+                    statusDiv.innerHTML += `
+                        <div class="status error">
+                            <h2>❌ Wrong Chain ID</h2>
+                            <p>You're connected to chain ID ${parseInt(chainId, 16)}, but you need chain ID 1337.</p>
+                            <button onclick="addNetwork()">Add Loyalty Rewards Chain</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Try to read from persistent blockchain
+                statusDiv.innerHTML += `<p>Checking contract on persistent blockchain...</p>`;
+
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const contract = new ethers.Contract(
+                    CONTRACT_ADDRESS,
+                    [
+                        "function getPropertyData(uint256) view returns (tuple(uint256,uint256,uint256,uint256,uint256,uint8))",
+                        "function getInvestorList(uint256) view returns (address[])"
+                    ],
+                    provider
+                );
+
+                try {
+                    const prop1 = await contract.getPropertyData(1);
+                    const investors1 = await contract.getInvestorList(1);
+
+                    statusDiv.innerHTML += `
+                        <div class="status success">
+                            <h2>✅ Connected to Persistent Blockchain!</h2>
+                            <p><strong>Network:</strong> Loyalty Rewards Chain</p>
+                            <p><strong>Contract:</strong> ${CONTRACT_ADDRESS}</p>
+                            <p><strong>Token 1 Total Bricks:</strong> ${prop1[0].toString()}</p>
+                            <p><strong>Token 1 Available:</strong> ${prop1[1].toString()}</p>
+                            <p><strong>Token 1 Investors:</strong> ${investors1.length}</p>
+                            <p style="color: green; font-weight: bold;">Your data is safe and accessible! 🎉</p>
+                        </div>
+                    `;
+
+                    // Check user's balance
+                    const userBalance = await contract.balanceOf(accounts[0], 1);
+                    if (userBalance.gt(0)) {
+                        statusDiv.innerHTML += `
+                            <div class="status success">
+                                <h2>🏠 Your Portfolio</h2>
+                                <p><strong>Token 1 Holdings:</strong> ${userBalance.toString()} bricks</p>
+                            </div>
+                        `;
+                    }
+
+                } catch (error) {
+                    statusDiv.innerHTML += `
+                        <div class="status error">
+                            <h2>❌ Cannot Read Contract Data</h2>
+                            <p>Chain ID is correct (1337) but cannot read properties.</p>
+                            <p><strong>Likely issue:</strong> You're connected to localhost:8545 instead of rpc.entailabs.com:8545</p>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <button onclick="addNetwork()">Add Correct Network</button>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status error">
+                        <h2>❌ Error</h2>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function addNetwork() {
+            try {
+                await ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: '0x539', // 1337 in hex
+                        chainName: 'Loyalty Rewards Chain',
+                        nativeCurrency: {
+                            name: 'ETH',
+                            symbol: 'ETH',
+                            decimals: 18
+                        },
+                        rpcUrls: ['http://rpc.entailabs.com:8545'],
+                        blockExplorerUrls: ['https://explorer.entailabs.com']
+                    }]
+                });
+                alert('Network added! Now switch to it and refresh.');
+            } catch (error) {
+                alert('Error adding network: ' + error.message);
+            }
+        }
+    </script>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.6.umd.min.js"></script>
+</body>
+</html>

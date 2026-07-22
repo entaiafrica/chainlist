@@ -1,0 +1,165 @@
+{
+  "name": "272 Ss Canvas Eighty2, Noordhang",
+  "description": "Immaculate 1-Bedroom, 1-Bathroom Apartment for Sale – Upmarket Living in Witkoppen\n\nLooking for a stylish, modern apartment in a prime location? This immaculate 1-bedroom, 1-bathroom apartment on the 2nd floor is perfect for young executives or investors seeking an upmarket lifestyle.\n\nConveniently located just 2 minutes from Witkoppen Road, with easy access to major roads, the property offers both comfort and connectivity.\n\nUpon entry, you'll be welcomed by an open-plan kitchen featuring:\n- Induction stove and oven\n- Extractor fan\n- Pantry and ample cupboard space\n- Granite countertops\n\nThe open-plan layout flows seamlessly from the kitchen to the lounge, which opens onto a spacious balcony – ideal for relaxing or entertaining.\n\nThe bedroom is generously sized with modern built-in cupboards and can comfortably fit a queen-sized bed. The full bathroom includes both a bathtub and shower.\n\nAdditional features include:\n- Prepaid electricity and geyser meter for cost-effective utilities\n- 24/7 security\n- Kids play area\n- Gym\n- Clubhouse\n- Communal pool\n\nThis well-maintained apartment offers a perfect blend of comfort, convenience, and luxury – ideal for modern living.",
+  "image": "ipfs://QmQzFQ56asizxUM3WZJvhdy7xZzth2XwVvQQpdTP8AMRct",
+  "external_url": "https://www.youtube.com/watch?v=Ch7jUva4aAE",
+  "attributes": [
+    {
+      "trait_type": "Property Type",
+      "value": "Apartment"
+    },
+    {
+      "trait_type": "Total Value",
+      "value": "R900,000"
+    },
+    {
+      "trait_type": "Bedrooms",
+      "display_type": "number",
+      "value": 1
+    },
+    {
+      "trait_type": "Bathrooms",
+      "display_type": "number",
+      "value": 1
+    },
+    {
+      "trait_type": "Garages",
+      "display_type": "number",
+      "value": 2
+    },
+    {
+      "trait_type": "Interest Rate",
+      "value": "12%"
+    },
+    {
+      "trait_type": "Monthly Repayment",
+      "value": "R8,919"
+    },
+    {
+      "trait_type": "Loan Term",
+      "value": "20 years"
+    },
+    {
+      "trait_type": "Location",
+      "value": "Noordhang, Randburg"
+    },
+    {
+      "trait_type": "Floor",
+      "value": "2nd Floor"
+    }
+  ],
+  "properties": {
+    "propertyAddress": "272 Ss Canvas Eighty2, 1 Canvas Road, Noordhang, Randburg",
+    "propertyType": "Apartment",
+    "bedrooms": 1,
+    "bathrooms": 1,
+    "garages": 2,
+    "floor": 2,
+    "totalBricks": 900000,
+    "totalPropertyValue": 900000,
+    "depositAmount": 90000,
+    "mortgageAmount": 810000,
+    "interestRate": 12,
+    "loanTermYears": 20,
+    "monthlyRepayment": 8919,
+    "totalOnceOffCosts": 155528,
+    "buyerWallet": "0xAE48395D7930cA91EC7fa1B4c3AA9cf945145011",
+    "buyerAlreadyPaid": 90000,
+    "buyerGrossMonthlyIncome": "R28k - R50k",
+    "otpPeriodDays": 105,
+    "otpStartDate": "2025-12-18",
+    "otpEndDate": "2026-04-02",
+    "nftTrustWallet": "0x712820B679400DACbb5c9eeccFB785378fc9b9B6",
+    "brkWallet": "0x361Ba631152BE934ef5d6e1670a177Ecef9458B6",
+    "brkBalance": 900000,
+    "complexName": "Canvas Eighty2",
+    "proximityToWitkoppenRoad": "2 minutes",
+    "noPetsAllowed": true,
+    "propertyFeatures": [
+      "Open-plan kitchen with induction stove and oven",
+      "Extractor fan",
+      "Pantry and ample cupboard space",
+      "Granite countertops",
+      "Kitchen flows seamlessly to lounge",
+      "Spacious balcony",
+      "Modern built-in cupboards",
+      "Queen-sized bed capacity",
+      "Full bathroom with bathtub and shower",
+      "Prepaid electricity meter",
+      "Prepaid geyser meter",
+      "24/7 security",
+      "Kids play area",
+      "Gym facilities",
+      "Clubhouse",
+      "Communal swimming pool",
+      "2nd floor location"
+    ],
+    "pointsOfInterest": [
+      {
+        "category": "Education",
+        "name": "Cooper College",
+        "distance": 0.57,
+        "unit": "km"
+      },
+      {
+        "category": "Food & Entertainment",
+        "name": "The Corner House",
+        "distance": 0.81,
+        "unit": "km"
+      },
+      {
+        "category": "Food & Entertainment",
+        "name": "Mamma Mia",
+        "distance": 1.36,
+        "unit": "km"
+      },
+      {
+        "category": "Transport & Public Services",
+        "name": "Postnet",
+        "distance": 1.35,
+        "unit": "km"
+      },
+      {
+        "category": "Transport & Public Services",
+        "name": "Jukskei Park Post Boxes",
+        "distance": 1.38,
+        "unit": "km"
+      },
+      {
+        "category": "Health",
+        "name": "Pharmasave",
+        "distance": 1.38,
+        "unit": "km"
+      },
+      {
+        "category": "Health",
+        "name": "Pharmasave",
+        "distance": 2.54,
+        "unit": "km"
+      },
+      {
+        "category": "Shopping",
+        "name": "FNB",
+        "distance": 1.39,
+        "unit": "km"
+      }
+    ],
+    "images": [
+      "ipfs://QmQzFQ56asizxUM3WZJvhdy7xZzth2XwVvQQpdTP8AMRct",
+      "ipfs://QmQzFQ56asizxUM3WZJvhdy7xZzth2XwVvQQpdTP8AMRct",
+      "ipfs://QmTV3jidd38zcyj9NL9kPMWxwQknnqqdWfBGM5Qbz7b9g9",
+      "ipfs://QmSs2FsHZvRfDW9BYWNdnYpf33MvfFqMNSPvZAQhyogiWT",
+      "ipfs://QmcQw5eY4jauG3kCktM3xqLvjhLu19P8a4zUSigYJ1Sp1V",
+      "ipfs://QmUXzZECBx1T8Lz5zPb797YamvxE6pJXN2eMQW7S7Wn1RM",
+      "ipfs://QmWpnzCewYfXHraMi9HDxNbNvHUryehwwrGcKBavRC71B3",
+      "ipfs://QmbzetqbEiiDuGK37sCiBuzHCKBWEPGqRbub6QWVjCMqrs",
+      "ipfs://QmaQ4Fqvw88piUdpygAR1oMznN1PmvbnCWkFhMzn11JT3z",
+      "ipfs://QmWHPW2DbeCStsc7idspMXRmX2sqpdN614wmJNhng2zZxg",
+      "ipfs://QmZa3TwJJMrQnCWZVGZ1K19ujNRAwf8gS4RphvDczYjA1s",
+      "ipfs://QmXuyUHC63VqvkJgS1FJvUimFos3ytGW9v5NHukHPZPED6",
+      "ipfs://QmVD559GDii6hPpY8bZFapXrY2qvvZF55cpALBnvemdejd",
+      "ipfs://QmbAmYG8PQAYqJ1p3ka8oJXRBzLEwUNVLLhFS1mWiH2QpC"
+    ],
+    "videoUrl": "https://www.youtube.com/watch?v=Ch7jUva4aAE"
+  }
+}

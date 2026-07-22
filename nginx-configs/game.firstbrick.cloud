@@ -1,0 +1,82 @@
+server {
+    server_name game.firstbrick.cloud;
+
+
+    # Relayer service for gasless transactions
+    location /relay {
+        proxy_pass http://127.0.0.1:8549/relay;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        add_header Access-Control-Allow-Origin *;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS";
+        add_header Access-Control-Allow-Headers "Content-Type";
+    }
+
+    # Serve local images directly to bypass CORS
+    location /static-images/ {
+        alias /opt/facebrick/tempimages/;
+        expires 1h; # Add cache control
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type" always;
+    }
+
+    # Health check endpoint
+    location /health {
+        proxy_pass http://127.0.0.1:8549/health;
+        proxy_set_header Host $host;
+        add_header Access-Control-Allow-Origin *;
+    }
+
+    # WebSocket endpoint (must be defined before the catch-all location /)
+    location /ws {
+        proxy_pass http://127.0.0.1:3500/ws;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Blockchain RPC and Web App routing (root path)
+    location / {
+        # Use a rewrite to determine the backend based on content type
+        # This approach uses a named location for routing
+        if ($http_content_type ~* "application/json") {
+            rewrite ^(.*)$ /_rpc$1 last;
+        }
+        # For non-RPC requests, proxy to game application
+        proxy_pass http://127.0.0.1:3500;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        client_max_body_size 50M;
+    }
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/game.firstbrick.cloud/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/game.firstbrick.cloud/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+}
+
+server {
+    if ($host = game.firstbrick.cloud) {
+        return 301 https://$host$request_uri;
+    }
+
+    server_name game.firstbrick.cloud;
+    listen 80;
+    return 404;
+
+
+}

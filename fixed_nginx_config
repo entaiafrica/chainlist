@@ -1,0 +1,172 @@
+# Main domain - redirect to marketplace
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name firstbrick.cloud www.firstbrick.cloud;
+    
+    ssl_certificate /etc/letsencrypt/live/firstbrick.cloud/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/firstbrick.cloud/privkey.pem;
+    
+    return 301 https://marketplace.firstbrick.cloud$request_uri;
+}
+
+# Marketplace Frontend
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name marketplace.firstbrick.cloud;
+    
+    ssl_certificate /etc/letsencrypt/live/firstbrick.cloud/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/firstbrick.cloud/privkey.pem;
+
+    # Static images directory
+    location /static-images/ {
+        alias /opt/facebrick/tempimages/;
+        expires 1h;
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type" always;
+    }
+
+    # Static assets (images, CSS, JS) with CORS headers
+    location ~* \.(png|jpg|jpeg|gif|ico|svg|css|js|woff|woff2|ttf|eot)$ {
+        proxy_pass http://localhost:3300;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+
+        # Add CORS headers for static assets (needed for MetaMask logo fetch)
+        proxy_hide_header Access-Control-Allow-Origin;
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type" always;
+
+        # Cache static assets
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # All other requests
+    location / {
+        proxy_pass http://localhost:3300;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # WebSocket connections
+    location /ws {
+        proxy_pass http://localhost:3300/ws;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}
+
+# RPC, IPFS, and Relayer
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name rpc.firstbrick.cloud;
+    
+    ssl_certificate /etc/letsencrypt/live/firstbrick.cloud/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/firstbrick.cloud/privkey.pem;
+
+    # Blockchain RPC (root path)
+    location / {
+        proxy_pass http://localhost:8545;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # CORS headers for blockchain access
+        proxy_hide_header Access-Control-Allow-Origin;
+        add_header Access-Control-Allow-Origin "https://marketplace.firstbrick.cloud" always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type" always;
+        
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+    }
+
+    # IPFS Gateway
+    location /ipfs/ {
+        proxy_pass http://localhost:8090/ipfs/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # Hide duplicate CORS header from upstream
+        proxy_hide_header Access-Control-Allow-Origin;
+        # CORS for IPFS
+        add_header Access-Control-Allow-Origin * always;
+    }
+
+    # Relayer Service - rewrite to strip /relay prefix
+    location ~ ^/relay(/.*)?$ {
+        rewrite ^/relay(/.*)?$ $1 break;
+        proxy_pass http://localhost:8549;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # CORS for relayer
+        proxy_hide_header Access-Control-Allow-Origin;
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type" always;
+    }
+
+    # IPFS API
+    location /ipfs-api/ {
+        proxy_pass http://localhost:5001/api/v0/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Hide duplicate CORS header from upstream
+        proxy_hide_header Access-Control-Allow-Origin;
+        # CORS for IPFS API
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+    }
+}
+
+# Otterscan Explorer - FirstBrick Explorer
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name explorer.firstbrick.cloud;
+
+    ssl_certificate /etc/letsencrypt/live/firstbrick.cloud/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/firstbrick.cloud/privkey.pem;
+
+    location / {
+        proxy_pass http://localhost:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+}

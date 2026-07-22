@@ -1,0 +1,672 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #000;
+  color: #fff;
+  overflow-x: hidden;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.logo-font {
+  font-family: 'Cairo Play', sans-serif;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 40px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  opacity: 0; /* Start hidden */
+}
+
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+@keyframes slowZoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+
+.animate-slow-zoom {
+  animation: slowZoom 20s linear infinite alternate;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #9333ea, #ec4899);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #a855f7, #f472b6);
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Mobile-optimized touch targets */
+@media (max-width: 768px) {
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Improve tap highlighting on mobile */
+* {
+  -webkit-tap-highlight-color: rgba(147, 51, 234, 0.3);
+}
+
+/* Better font rendering on mobile */
+@media (max-width: 768px) {
+  body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Responsive text sizing */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1025px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* Safe area insets for mobile notches */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* Improve scrolling performance on mobile */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Better focus states for accessibility */
+:focus-visible {
+  outline: 2px solid rgba(147, 51, 234, 0.8);
+  outline-offset: 2px;
+}
+
+/* Optimize animations for mobile */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile-friendly modal overlays */
+@media (max-width: 768px) {
+  .fixed.inset-0 {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+}
+
+/* Keyframes for the image carousel */
+@keyframes carousel {
+  0%, 30% {
+    transform: translateX(0);
+  }
+  33%, 63% {
+    transform: translateX(-100%);
+  }
+  66%, 100% {
+    transform: translateX(-200%);
+  }
+}
+
+/* Prevent zoom on input focus (iOS) */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* DApp/Wallet Browser Optimizations */
+/* Ensure full viewport coverage with safe areas */
+#root {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Optimize touch interactions for wallet browsers */
+@media (max-width: 768px) {
+  /* Larger touch targets for all interactive elements */
+  button:not(.icon-only),
+  a:not(.icon-only),
+  [role="button"]:not(.icon-only) {
+    min-height: 48px;
+    padding: 12px 20px;
+  }
+
+  /* Improve button visibility on mobile */
+  button,
+  a.button,
+  [role="button"] {
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  /* Better touch feedback */
+  button:active,
+  a:active,
+  [role="button"]:active {
+    transform: scale(0.96);
+    transition: transform 0.1s ease;
+  }
+
+  /* Prevent text selection on buttons */
+  button,
+  a.button,
+  [role="button"] {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Wallet modal improvements */
+@media (max-width: 768px) {
+  /* Make modals/popups easier to close on mobile */
+  [role="dialog"],
+  .modal {
+    max-width: calc(100vw - 2rem);
+    margin: 1rem;
+  }
+
+  /* Larger spacing for better thumb reach */
+  .modal-content {
+    padding: 1.5rem !important;
+  }
+}
+
+/* Improve navbar for mobile wallets */
+@media (max-width: 768px) {
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  /* Larger nav items */
+  nav a,
+  nav button {
+    padding: 14px 18px !important;
+    font-size: 16px !important;
+  }
+}
+
+/* Better card interactions on mobile */
+@media (max-width: 768px) {
+  .property-card,
+  .nft-card,
+  [class*="card"] {
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+  }
+
+  .property-card:active,
+  .nft-card:active,
+  [class*="card"]:active {
+    border-color: rgba(147, 51, 234, 0.5);
+    transform: scale(0.98);
+  }
+}
+
+/* Optimize images for mobile bandwidth */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Improve readability on small screens */
+@media (max-width: 768px) {
+  p,
+  span,
+  div {
+    line-height: 1.6;
+  }
+
+  /* Ensure text doesn't get too small */
+  .text-xs {
+    font-size: 0.8125rem !important;
+  }
+
+  .text-sm {
+    font-size: 0.9375rem !important;
+  }
+}
+
+/* Wallet connection button prominence */
+@media (max-width: 768px) {
+  [class*="connect"],
+  [class*="wallet"] {
+    box-shadow: 0 4px 12px rgba(147, 51, 234, 0.3);
+    border: 2px solid rgba(147, 51, 234, 0.4);
+  }
+}
+
+/* ============================================
+   FIRSTBRICK MOBILE-FIRST ENHANCEMENTS
+   ============================================ */
+
+/* Property Cards - Mobile Optimization */
+@media (max-width: 768px) {
+  .property-card,
+  .nft-card {
+    margin-bottom: 1.5rem;
+    border-width: 2px;
+  }
+
+  /* Ensure all values are readable */
+  .property-card .value,
+  .nft-card .value {
+    font-size: 1.125rem !important; /* 18px */
+    font-weight: 800;
+  }
+
+  /* Investor sections on mobile */
+  .investor-section {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .investor-address {
+    font-size: 0.75rem !important; /* 12px */
+    word-break: break-all;
+    line-height: 1.4;
+  }
+
+  /* Leaderboard mobile */
+  .leaderboard-card {
+    padding: 1.5rem 1rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Property images - optimize for mobile */
+  .property-image {
+    min-height: 16rem; /* 256px */
+    max-height: 20rem; /* 320px */
+  }
+
+  /* Buttons - larger touch targets */
+  .btn-primary,
+  .btn-secondary,
+  button:not(.icon-only) {
+    min-height: 56px;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+  }
+
+  /* Investment input fields */
+  input[type="number"],
+  input[type="text"] {
+    font-size: 1rem !important; /* Prevents iOS zoom */
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Tablet Optimization (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .property-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+
+  .property-card {
+    max-width: 100%;
+  }
+}
+
+/* Investor Leaderboard - Responsive */
+@media (max-width: 1024px) {
+  .investor-podium {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .investor-podium > div {
+    max-width: 100%;
+  }
+}
+
+/* Safe Area Improvements for Notched Devices */
+@supports (padding: max(0px)) {
+  .hero-section,
+  .property-section {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .navbar {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+
+  .footer {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* DApp Browser Specific Optimizations */
+@media (max-width: 768px) {
+  /* MetaMask, Trust Wallet, etc. */
+  body {
+    /* Ensure proper rendering in WebView */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Fix viewport issues in wallet browsers */
+  #root {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
+  /* Better button feedback for touch */
+  button:active,
+  a:active,
+  [role="button"]:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+    transition: all 0.1s ease;
+  }
+
+  /* Prevent double-tap zoom on buttons */
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+}
+
+/* Loading States - Mobile Optimized */
+@media (max-width: 768px) {
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+  }
+
+  .loading-text {
+    font-size: 1rem;
+    margin-top: 1rem;
+  }
+}
+
+/* Modal Improvements for Mobile */
+@media (max-width: 768px) {
+  [role="dialog"],
+  .modal {
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    border-radius: 16px;
+  }
+
+  .modal-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    padding: 1.5rem;
+    border-bottom: 1px solid #E5E7EB;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+}
+
+/* Accessibility - Better Focus States */
+@media (max-width: 768px) {
+  :focus-visible {
+    outline: 3px solid #6A45FF;
+    outline-offset: 4px;
+    border-radius: 8px;
+  }
+
+  /* Larger tap targets for links */
+  a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* Performance - Reduce animations on low-end devices */
+@media (max-width: 768px) and (prefers-reduced-motion: no-preference) {
+  /* Only animate on capable devices */
+  .animated-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .animated-card:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Contrast Improvements */
+@media (max-width: 768px) {
+  /* Ensure WCAG AA compliance */
+  .text-gray-500 {
+    color: #6B7280; /* Adjusted for 4.5:1 contrast */
+  }
+
+  .text-gray-600 {
+    color: #4B5563; /* Adjusted for 4.5:1 contrast */
+  }
+
+  /* Better shadows for depth perception */
+  .shadow-lg {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15),
+                0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Card Interactions */
+@media (max-width: 768px) {
+  .property-card,
+  .nft-card,
+  [class*="card"] {
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+  }
+
+  .property-card:active,
+  .nft-card:active,
+  [class*="card"]:active {
+    border-color: rgba(106, 69, 255, 0.3);
+    transform: scale(0.98);
+  }
+}
+
+/* Typography Improvements for Mobile */
+@media (max-width: 768px) {
+  h1, .text-5xl, .text-6xl, .text-7xl {
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  h2, .text-4xl {
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  h3, .text-3xl {
+    line-height: 1.4;
+  }
+
+  /* Better readability */
+  p,
+  span,
+  div {
+    line-height: 1.6;
+  }
+
+  /* Ensure text doesn't get too small */
+  .text-xs {
+    font-size: 0.8125rem !important; /* 13px minimum */
+  }
+
+  .text-sm {
+    font-size: 0.9375rem !important; /* 15px */
+  }
+}
+
+/* Optimize images for mobile bandwidth */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Better scrolling on mobile */
+.overflow-y-auto,
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Prevent layout shift on load */
+img[src] {
+  aspect-ratio: attr(width) / attr(height);
+}
+
+/* Improve tap highlighting */
+* {
+  -webkit-tap-highlight-color: rgba(106, 69, 255, 0.2);
+}
+
+/* Grid improvements for mobile */
+@media (max-width: 640px) {
+  .grid {
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid {
+    gap: 1.5rem;
+  }
+}
+
+/* Ensure proper stacking contexts */
+.relative {
+  z-index: 1;
+}
+
+.sticky {
+  position: -webkit-sticky;
+  position: sticky;
+}
+
+/* Better form inputs on mobile */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevents iOS zoom */
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    border-width: 2px;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #6A45FF;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(106, 69, 255, 0.1);
+  }
+}

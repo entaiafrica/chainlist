@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Brick Balance</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .balance {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        .info {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .error {
+            color: #e74c3c;
+            padding: 10px;
+            background: #ffe5e5;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🏠 Check Your Brick Balance</h1>
+
+        <div class="info">
+            <strong>Property:</strong> Chic Sandton Apartment<br>
+            <strong>Token ID:</strong> 1<br>
+            <strong>Contract:</strong> 0x0165878A594ca255338adfa4d48449f69242Eb8F
+        </div>
+
+        <button onclick="checkBalance()">Connect Wallet & Check Balance</button>
+
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        const MARKETPLACE_ADDRESS = '0x0165878A594ca255338adfa4d48449f69242Eb8F';
+        const TOKEN_ID = 1;
+
+        // Minimal ABI - just the balanceOf function
+        const ABI = [
+            "function balanceOf(address account, uint256 id) view returns (uint256)"
+        ];
+
+        async function checkBalance() {
+            const resultDiv = document.getElementById('result');
+
+            try {
+                // Check if MetaMask is installed
+                if (typeof window.ethereum === 'undefined') {
+                    resultDiv.innerHTML = '<div class="error">⚠️ MetaMask is not installed!</div>';
+                    return;
+                }
+
+                // Request account access
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                const signer = provider.getSigner();
+                const address = await signer.getAddress();
+
+                // Create contract instance
+                const marketplace = new ethers.Contract(MARKETPLACE_ADDRESS, ABI, provider);
+
+                // Get balance
+                const balance = await marketplace.balanceOf(address, TOKEN_ID);
+                const formattedBalance = ethers.utils.formatUnits(balance, 0);
+
+                // Display result
+                resultDiv.innerHTML = `
+                    <div class="info">
+                        <strong>Your Wallet:</strong><br>
+                        ${address}
+                    </div>
+                    <div class="balance">
+                        ${Number(formattedBalance).toLocaleString()}
+                    </div>
+                    <div style="text-align: center; color: #667eea; font-size: 20px; font-weight: bold;">
+                        BRICKS OWNED
+                    </div>
+                    <div class="info" style="margin-top: 20px;">
+                        <strong>Note:</strong> MetaMask doesn't display ERC1155 quantities in the NFT tab.
+                        This is normal! Use this page or the frontend dApp to check your balance.
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

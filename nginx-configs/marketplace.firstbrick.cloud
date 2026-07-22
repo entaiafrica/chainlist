@@ -1,0 +1,82 @@
+server {
+    server_name marketplace.firstbrick.cloud;
+
+    # Relayer service for gasless transactions
+    location /relay {
+        proxy_pass http://127.0.0.1:8549;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+
+        # Handle preflight OPTIONS requests
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin * always;
+            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            return 204;
+        }
+    }
+
+    # Serve local images directly to bypass CORS
+    location /static-images/ {
+        alias /opt/facebrick/tempimages/;
+        expires 1h; # Add cache control
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type" always;
+    }
+
+    # Health check endpoint for relayer
+    location /health {
+        proxy_pass http://127.0.0.1:8549;
+        proxy_set_header Host $host;
+        add_header Access-Control-Allow-Origin * always;
+    }
+
+    location /ws {
+        proxy_pass http://127.0.0.1:3300/ws;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+
+    # All other requests go to First Brick React app
+    location / {
+        proxy_pass http://127.0.0.1:3300;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        client_max_body_size 50M;
+    }
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/marketplace.firstbrick.cloud/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/marketplace.firstbrick.cloud/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+server {
+    if ($host = marketplace.firstbrick.cloud) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    server_name marketplace.firstbrick.cloud;
+
+    listen 80;
+    return 404; # managed by Certbot
+
+
+}

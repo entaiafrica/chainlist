@@ -1,0 +1,42 @@
+{
+  "name": "Steeldale Mall Shopping Centre",
+  "description": "A prime commercial shopping centre in Johannesburg with strong tenant mix and consistent mortgage income. This property features 29,327m² GLA with major anchor tenants including Pick n Pay, Dischem, and Pepkor. The mall enjoys 95% occupancy and generates R30.1M annual income with a 12.5% net yield.",
+  "image": "https://images.unsplash.com/photo-1555529902-5261145633bf?q=80&w=2940&auto=format&fit=crop",
+  "external_url": "https://firstbrick.com/property/steeldale-mall",
+  "attributes": [
+    { "trait_type": "Property Type", "value": "Commercial - Shopping Centre" },
+    { "trait_type": "Total Value", "value": "R240,000,000" },
+    { "trait_type": "Annual Yield", "value": "12.5%" },
+    { "trait_type": "Risk Rating", "value": "Medium" },
+    { "trait_type": "GLA", "value": "29,327m²" },
+    { "trait_type": "Occupancy", "value": "95%" },
+    { "trait_type": "Year Built", "display_type": "number", "value": 2005 },
+    { "trait_type": "Location", "value": "Steeledale, Johannesburg" }
+  ],
+  "properties": {
+    "propertyAddress": "9 Linroy St, Steeledale, Johannesburg, 2197",
+    "gps": "-26.2467, 27.9542",
+    "totalBricks": 240000000,
+    "bricksForBuyer": 24000000,
+    "bricksForInvestors": 216000000,
+    "pricePerBrick": "1.00 BRK",
+    "totalValue": 240000000,
+    "monthlyIncome": 2508333,
+    "annualIncome": 30100000,
+    "nettAnnualIncome": "R30.1M",
+    "downPayment": 24000000,
+    "annualYield": 12.5,
+    "propertyAppreciation": 3.5,
+    "expectedTotalReturn": 16.0,
+    "gla": "29,327m²",
+    "occupancyRate": "95%",
+    "numberOfTenants": "52",
+    "majorTenants": ["Pick n Pay", "Dischem", "Pepkor", "KFC", "Sasol"],
+    "propertySubType": "Shopping Centre",
+    "images": [
+      "https://images.unsplash.com/photo-1555529902-5261145633bf?q=80&w=2940&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1519922639192-e73293ca430e?q=80&w=2942&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1567449303183-7071f7f2d7a0?q=80&w=2940&auto=format&fit=crop"
+    ]
+  }
+}

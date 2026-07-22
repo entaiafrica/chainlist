@@ -1,0 +1,246 @@
+
+import { Link } from 'react-router-dom';
+import Navbar from './Navbar';
+import Footer from './Footer';
+import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import CountdownTimer from './CountdownTimer';
+import MarketplaceJSON from '../Marketplace_new.json';
+import { getUserProfile } from '../profileService';
+import { getEthersProvider } from '../walletUtils';
+import { GetIpfsUrlFromPinata } from "../utils";
+import WalletBalance from './WalletBalance';
+
+function Landing() {
+  const [blockchainProperties, setBlockchainProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [profiles, setProfiles] = useState({});
+  const [userAddress, setUserAddress] = useState(null);
+
+  useEffect(() => {
+    async function fetchPropertyData() {
+        setLoading(true);
+        const ethers = require("ethers");
+        try {
+            let provider;
+            let fetchedUserAddress = null;
+
+            // Use a public RPC if no wallet is available
+            const CORRECT_RPC = "https://rpc.firstbrick.cloud";
+            try {
+                provider = getEthersProvider();
+                const signer = provider.getSigner();
+                fetchedUserAddress = await signer.getAddress();
+                setUserAddress(fetchedUserAddress);
+            } catch (err) {
+                provider = new ethers.providers.StaticJsonRpcProvider(CORRECT_RPC, { chainId: 12786, name: 'BrickChain' });
+            }
+
+            const contract = new ethers.Contract(MarketplaceJSON.address, MarketplaceJSON.abi, provider);
+            
+            // Get all property IDs from the contract
+            const allTokenIds = await contract.getAllProperties();
+            
+            // Get the last two token IDs for featured properties
+            const propertiesToFetch = allTokenIds.slice(-2).reverse();
+
+            console.log('propertiesToFetch:', propertiesToFetch);
+
+            const propertyPromises = propertiesToFetch.map(tokenId => (async () => {
+                try {
+                    const propertyData = await contract.getPropertyData(tokenId);
+                    if (propertyData.totalBricks.eq(0)) return null;
+
+                    const metadataUri = await contract.uri(tokenId);
+                    const metadata = await (await fetch(GetIpfsUrlFromPinata(metadataUri))).json();
+
+                    const buyer = await contract.propertyBuyer(tokenId);
+                    const depositAmount = parseFloat(ethers.utils.formatEther(propertyData.depositAmount));
+                    const pricePerBrick = parseFloat(ethers.utils.formatEther(propertyData.pricePerBrick));
+
+                    const investors = [];
+                    const investorAddresses = await contract.getInvestorList(tokenId);
+                    const trustWallet = await contract.propertyTrustWallet(tokenId);
+                    for (const address of investorAddresses) {
+                        if (address.toLowerCase() === trustWallet.toLowerCase()) continue;
+                        const balance = await contract.balanceOf(address, tokenId);
+                        const bricks = parseInt(ethers.utils.formatUnits(balance, 0));
+                        if (bricks > 0) {
+                            investors.push({ address, bricks, amount: bricks * pricePerBrick });
+                        }
+                    }
+                    investors.sort((a, b) => b.bricks - a.bricks);
+
+                    let userBricks = 0;
+                    if (fetchedUserAddress) {
+                        const balance = await contract.balanceOf(fetchedUserAddress, tokenId);
+                        userBricks = parseInt(ethers.utils.formatUnits(balance, 0));
+                    }
+
+                    return {
+                        tokenId: tokenId,
+                        image: metadata.image,
+                        name: metadata.name,
+                        location: metadata.properties?.propertyAddress || 'N/A',
+                        totalPropertyValue: ethers.utils.formatUnits(propertyData.totalBricks, 0),
+                        bricksToSell: ethers.utils.formatUnits(propertyData.bricksAvailable, 0),
+                        pricePerBrick: ethers.utils.formatEther(propertyData.pricePerBrick),
+                        buyer,
+                        buyerDeposit: depositAmount,
+                        investors,
+                        otpDeadline: ethers.utils.formatUnits(propertyData.otpDeadline, 0),
+                        userBricks,
+                    };
+                } catch (err) {
+                    console.error(`Failed to load property ${tokenId}:`, err);
+                    return null;
+                }
+            })());
+
+            const items = (await Promise.all(propertyPromises)).filter(Boolean); // Await all promises and filter out nulls
+            console.log('Fetched properties (after filter):', items);
+            setBlockchainProperties(items);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    }
+    fetchPropertyData();
+  }, []);
+
+  useEffect(() => {
+    if (blockchainProperties.length === 0) return;
+    async function loadProfiles() {
+      const addresses = new Set();
+      blockchainProperties.forEach(prop => {
+        if (prop.buyer) addresses.add(prop.buyer);
+        prop.investors.forEach(inv => addresses.add(inv.address));
+      });
+
+      const loadedProfiles = {};
+      for (const address of addresses) {
+        const profile = await getUserProfile(address);
+        loadedProfiles[address.toLowerCase()] = profile;
+      }
+      setProfiles(loadedProfiles);
+    }
+    loadProfiles();
+  }, [blockchainProperties]);
+  
+  const getProfileData = (address) => profiles[address.toLowerCase()] || {};
+  const getInitials = (nameOrAddress) => {
+      if (!nameOrAddress) return '?';
+      if (nameOrAddress.startsWith('0x')) return nameOrAddress.substring(2, 4).toUpperCase();
+      const parts = nameOrAddress.trim().split(' ');
+      return parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : nameOrAddress.substring(0, 2).toUpperCase();
+  };
+
+  return (
+    <div className="bg-white text-gray-800 w-full">
+      <Navbar />
+      <section className="relative h-[90vh] min-h-[600px] flex items-center text-white overflow-hidden">
+        <div className="absolute inset-0 bg-black">
+          <img src="https://images.unsplash.com/photo-1600585152220-90363fe7e115?q=80&w=2940&auto=format&fit=crop" alt="Luxurious modern house" className="h-full w-full object-cover opacity-60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+        </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 text-center">
+          <h1 className="text-5xl md:text-7xl font-black mb-6">Own real estate, <span className="text-yellow-400">one brick at a time.</span></h1>
+          <p className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-10">Invest in premium property fractions, earn passive mortgage income, and build wealth with as little as R105.</p>
+          <div className="flex justify-center gap-4">
+            <Link to="/marketplace" className="bg-white text-gray-900 font-bold py-4 px-10 rounded-full text-lg">Browse Properties</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 bg-white">
+        <div className="w-full">
+            <div className="text-center mb-12 px-4">
+                <h2 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">Featured Opportunities</h2>
+                <p className="text-lg text-gray-500 max-w-xl mx-auto">Curated high-yield properties available for immediate investment.</p>
+            </div>
+
+            {loading ? (
+                <div className="flex justify-center items-center py-20"><Loader2 className="w-12 h-12 text-primary animate-spin" /></div>
+            ) : (
+                <div className="flex flex-col">
+                    {blockchainProperties.map((property) => {
+                        const totalValue = parseFloat(property.totalPropertyValue) * parseFloat(property.pricePerBrick);
+                        const fundingRaised = (property.buyerDeposit + property.investors.reduce((sum, inv) => sum + inv.amount, 0));
+                        const fundedPercentage = totalValue > 0 ? (fundingRaised / totalValue) * 100 : 0;
+                        
+                        return (
+                            <div key={property.tokenId} className="bg-white min-h-screen flex flex-col border-b-8 border-gray-100">
+                                <div className="relative h-64 overflow-hidden">
+                                    <img src={GetIpfsUrlFromPinata(property.image)} alt={property.name} className="w-full h-full object-cover"/>
+                                    <div className="absolute top-4 right-4 bg-black/80 text-white px-3 py-1.5 rounded-lg text-sm font-bold">{fundedPercentage.toFixed(0)}% Funded</div>
+                                </div>
+                                <div className="p-4 flex flex-col flex-grow">
+                                    {userAddress && <div className="mb-4"><WalletBalance compact /></div>}
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{property.name}</h3>
+                                    <p className="text-gray-600 text-sm mb-4">{property.location}</p>
+                                    
+                                    <div className="grid grid-cols-3 gap-2 mb-4">
+                                      <div className="bg-blue-50 p-2 rounded-lg text-center"><p className="text-xs font-semibold uppercase text-blue-800">Value</p><p className="text-lg font-bold text-gray-900">R{totalValue.toLocaleString()}</p></div>
+                                      <div className="bg-gray-100 p-2 rounded-lg text-center"><p className="text-xs font-semibold uppercase text-gray-700">Need</p><p className="text-lg font-bold text-gray-900">R{(totalValue - fundingRaised).toLocaleString()}</p></div>
+                                      <div className="bg-green-50 p-2 rounded-lg text-center"><p className="text-xs font-semibold uppercase text-green-800">Raised</p><p className="text-lg font-bold text-green-700">R{fundingRaised.toLocaleString()}</p></div>
+                                    </div>
+
+                                    <div className="flex-grow">
+                                        {(property.investors?.length > 0 || property.buyerDeposit > 0) && (
+                                            <div className="mb-4">
+                                                <h4 className="text-lg font-bold text-gray-800 mb-2">Investors</h4>
+                                                <div className="space-y-2">
+                                                    {property.buyer && property.buyerDeposit > 0 && (() => {
+                                                        const profile = getProfileData(property.buyer);
+                                                        const displayName = profile.name ? `${profile.name} (${property.buyer.substring(0, 4)}...${property.buyer.substring(38)})` : `${property.buyer.substring(0, 6)}...${property.buyer.substring(38)}`;
+                                                        return (
+                                                            <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg">
+                                                                <div className="flex items-center gap-3">
+                                                                    {profile.profilePicture ? <img src={GetIpfsUrlFromPinata(profile.profilePicture)} alt={displayName} className="w-8 h-8 rounded-full"/> : <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center">{getInitials(profile.name || property.buyer)}</div>}
+                                                                    <p className="text-sm font-semibold text-gray-800">{displayName} <span className="text-xs font-bold text-blue-700">(Buyer)</span></p>
+                                                                </div>
+                                                                <span className="text-sm font-bold text-blue-700">R{property.buyerDeposit.toLocaleString()}</span>
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                    {property.investors.slice(0, 3).map((inv) => {
+                                                          const profile = getProfileData(inv.address);
+                                                          const displayName = profile.name ? `${profile.name} (${inv.address.substring(0, 4)}...${inv.address.substring(38)})` : `${inv.address.substring(0, 6)}...${inv.address.substring(38)}`;
+                                                          return(
+                                                            <div key={inv.address} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                                                                <div className="flex items-center gap-3">
+                                                                    {profile.profilePicture ? <img src={GetIpfsUrlFromPinata(profile.profilePicture)} alt={displayName} className="w-8 h-8 rounded-full"/> : <div className="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center">{getInitials(profile.name || inv.address)}</div>}
+                                                                    <p className="text-sm font-semibold text-gray-800">{displayName}</p>
+                                                                </div>
+                                                                <span className="text-sm font-bold text-gray-900">R{inv.amount.toLocaleString()}</span>
+                                                            </div>
+                                                          );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="pt-4">
+                                        <div className={`grid ${userAddress ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mb-4`}>
+                                            <div className="bg-gray-100 p-2 rounded-lg text-center"><p className="text-xs font-semibold uppercase text-gray-600">Offer Ends</p><CountdownTimer deadline={property.otpDeadline} /></div>
+                                            <div className="bg-gray-100 p-2 rounded-lg text-center"><p className="text-xs font-semibold uppercase text-gray-600">Available</p><p className="text-2xl font-bold text-primary">{parseFloat(property.bricksToSell).toLocaleString()}</p></div>
+                                            {userAddress && <div className="bg-green-100 p-2 rounded-lg text-center border-2 border-green-500"><p className="text-xs font-semibold uppercase text-green-800">You Own</p><p className="text-2xl font-bold text-green-600">{property.userBricks.toLocaleString()}</p></div>}
+                                        </div>
+                                        <Link to={`/nftPage/${property.tokenId}`} className="block w-full text-center bg-primary text-white font-bold py-4 rounded-lg">Invest Now</Link>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+      </section>
+      <Footer />
+    </div>
+  );
+}
+
+export default Landing;

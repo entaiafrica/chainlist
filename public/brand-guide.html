@@ -1,0 +1,446 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FirstBrick - Brand Guide</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo+Play:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Official Brand Colors */
+            --primary-purple: #9D4EDD;
+            --primary-orange: #FF8C42;
+            --accent-gold: #FFD700;
+            --accent-brick-red: #D64545;
+
+            /* Light Theme Palette */
+            --background-light: #FFFFFF;
+            --surface-light: #F8F9FA;
+            --border-light: #E9ECEF;
+            --text-dark-primary: #023047;
+            --text-dark-secondary: #5A7D8C;
+            
+            /* Dark Theme Palette */
+            --surface-dark: #1A1A2E;
+            --text-light-primary: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark-secondary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-light);
+            padding: 16px 40px;
+            z-index: 1000;
+        }
+
+        nav ul {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        nav a {
+            color: var(--text-dark-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        nav a:hover {
+            color: var(--text-dark-primary);
+        }
+
+        nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--text-dark-primary);
+        }
+
+        /* Header Section */
+        header {
+            padding: 80px 40px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--surface-light);
+        }
+
+        .header-logo-container {
+            margin-bottom: 24px;
+        }
+
+        .header-logo-container img {
+            height: 72px;
+            width: auto;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Cairo Play', sans-serif;
+            font-weight: 700;
+            color: var(--text-dark-primary);
+        }
+
+        h1 {
+            font-size: 56px;
+            margin-bottom: 16px;
+        }
+        
+        h2 {
+           font-size: 42px;
+           margin-bottom: 16px;
+        }
+        
+        h3 {
+           font-size: 20px;
+           margin-bottom: 24px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: var(--text-dark-secondary);
+            margin-bottom: 32px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* Section Styling */
+        section {
+            padding: 80px 40px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        section:last-of-type { border-bottom: none; }
+
+        .section-subtitle {
+            font-size: 16px;
+            color: var(--text-dark-secondary);
+            margin-bottom: 60px;
+            max-width: 800px;
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Logo Card Styling */
+        .logo-usage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+        }
+
+        .logo-card {
+            background: var(--surface-light);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+        }
+        
+        .logo-card.dark-bg {
+             background: var(--surface-dark);
+        }
+        
+        .logo-card.dark-bg h3, .logo-card.dark-bg p {
+             color: var(--text-light-primary);
+        }
+
+        .logo-display {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            border-radius: 8px;
+        }
+        
+        .logo-display.dark { background-color: var(--surface-dark); }
+        .logo-display.light { background-color: #FFF; border: 1px solid var(--border-light); }
+
+
+        .logo-display img {
+            max-width: 80%;
+            max-height: 70px;
+        }
+
+        .logo-card p {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        /* Color Palette Section */
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+        }
+
+        .color-card {
+            background: var(--surface-light);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .color-swatch { height: 160px; width: 100%; }
+        .color-info { padding: 24px; }
+        .color-name { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-dark-primary); }
+        .color-hex { font-size: 14px; font-family: 'Courier New', monospace; margin-bottom: 16px; color: var(--text-dark-secondary); }
+        .color-emotion { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: var(--primary-purple); }
+        .color-description { font-size: 13px; line-height: 1.5; color: var(--text-dark-secondary); }
+        
+        /* Tone of Voice Section */
+        .tone-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+        .tone-card {
+            background: var(--surface-light);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--primary-purple); /* Ensured purple border */
+        }
+        .tone-card h3 { color: var(--text-dark-primary); }
+        .tone-card p { color: var(--text-dark-secondary); } /* Ensure p tags are dark secondary */
+
+        /* Business Card Section */
+        .business-card {
+            width: 350px;
+            height: 200px;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .business-card img {
+            width: 120px;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--surface-light);
+            border-top: 1px solid var(--border-light);
+            padding: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-dark-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav ul {
+                gap: 20px;
+            }
+            h1 { font-size: 42px; }
+            section { padding: 60px 20px; }
+            .container { padding: 0 20px; }
+            .typography-grid { grid-template-columns: 1fr; }
+            .business-card-container { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="#logo" class="active">Logo</a></li>
+            <li><a href="#lockup">Lockup</a></li>
+            <li><a href="#colors">Colors</a></li>
+            <li><a href="#tone">Tone of Voice</a></li>
+            <li><a href="#business-card">Business Card</a></li>
+        </ul>
+    </nav>
+
+    <header>
+        <div class="header-logo-container">
+            <img src="https://i.ibb.co/cctvbVjM/brick.png" alt="FirstBrick Logo">
+        </div>
+        <h1>FirstBrick Brand Guide</h1>
+        <p class="subtitle">Tokenizing Real Estate for the Modern Investor.</p>
+    </header>
+
+    <main>
+        <!-- Logo Usage Section -->
+        <section id="logo">
+            <div class="container">
+                <h2>Logo Assets</h2>
+                <p class="section-subtitle">The correct logo must be used to ensure brand consistency across all applications.</p>
+                <div class="logo-usage-grid">
+                    <div class="logo-card">
+                        <h3>Primary Logo</h3>
+                        <div class="logo-display light">
+                            <img src="https://i.ibb.co/cctvbVjM/brick.png" alt="FirstBrick Primary Logo">
+                        </div>
+                        <p>The primary logo is for use on light or transparent backgrounds. This is the main version.</p>
+                    </div>
+                    <div class="logo-card">
+                        <h3>Monochrome Black</h3>
+                        <div class="logo-display light">
+                            <img src="https://i.ibb.co/N6vpqKkX/brick-black.png" alt="FirstBrick Monochrome Black Logo">
+                        </div>
+                        <p>For single-color print or applications on light backgrounds where the primary logo is not suitable.</p>
+                    </div>
+                     <div class="logo-card dark-bg">
+                        <h3>Monochrome White</h3>
+                        <div class="logo-display dark">
+                            <img src="https://i.ibb.co/XrdkJtFX/brick-white.png" alt="FirstBrick Monochrome White Logo">
+                        </div>
+                        <p>For use on dark or colored backgrounds to ensure high contrast and legibility.</p>
+                    </div>
+                    <div class="logo-card">
+                        <h3>Genesis Gold Brick</h3>
+                        <div class="logo-display light">
+                            <img src="https://i.ibb.co/Y4VFNqFq/brick-royal-gold.png" alt="Genesis Gold Brick Logo">
+                        </div>
+                        <p>This asset is reserved exclusively for materials related to the Genesis Investor program.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Logo Lockup -->
+        <section id="lockup">
+            <div class="container">
+                <h2>Logo & Wordmark Lockup</h2>
+                <p class="section-subtitle">The official lockup ensures consistent presentation of the logomark and wordmark.</p>
+                <div class="logo-card">
+                     <h3>Official Lockup</h3>
+                     <p class="mb-6">The wordmark "FirstBrick" uses the 'Cairo Play' font, weight 700. In the official lockup, the logomark and wordmark are presented side-by-side, sharing the exact same visual height for cohesive branding.</p>
+                     <div class="space-y-4">
+                        <div class="flex items-center justify-center p-6 bg-white border rounded-lg" style="height: 100px;">
+                            <img src="https://i.ibb.co/cctvbVjM/brick.png" alt="Logomark" style="height: 100%; width: auto;">
+                            <span style="font-family: 'Cairo Play', sans-serif; font-size: 3.5rem; font-weight: 700; color: var(--text-dark-primary); line-height: 1;">FirstBrick</span>
+                        </div>
+                        <div class="flex items-center justify-center p-6 bg-surface-dark border rounded-lg" style="height: 100px;">
+                            <img src="https://i.ibb.co/XrdkJtFX/brick-white.png" alt="Logomark" style="height: 100%; width: auto;">
+                            <span style="font-family: 'Cairo Play', sans-serif; font-size: 3.5rem; font-weight: 700; color: var(--text-light-primary); line-height: 1;">FirstBrick</span>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Color Palette Section -->
+        <section id="colors">
+            <div class="container">
+                <h2>Color Palette</h2>
+                <p class="section-subtitle">Our brand colors evoke trust, aspiration, and innovation.</p>
+                <div class="palette-grid">
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: var(--primary-purple);"></div>
+                        <div class="color-info">
+                            <div class="color-name">Primary Purple</div><div class="color-hex">#9D4EDD</div>
+                            <div class="color-emotion">Innovation • Aspiration</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: var(--primary-orange);"></div>
+                        <div class="color-info">
+                            <div class="color-name">Primary Orange</div><div class="color-hex">#FF8C42</div>
+                            <div class="color-emotion">Energy • Progress</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: var(--accent-brick-red);"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Brick Red</div><div class="color-hex">#D64545</div>
+                            <div class="color-emotion">Foundation • Strength</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: var(--accent-gold);"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Gold</div><div class="color-hex">#FFD700</div>
+                            <div class="color-emotion">Wealth • Success</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Tone of Voice Section -->
+        <section id="tone">
+            <div class="container">
+                <h2>Tone of Voice</h2>
+                <p class="section-subtitle">How we communicate is as important as what we communicate.</p>
+                <div class="tone-grid">
+                    <div class="tone-card">
+                        <h3>Trustworthy &amp; Secure</h3>
+                        <p>We use clear, direct language, prioritizing transparency and the security of our investors' assets.</p>
+                    </div>
+                    <div class="tone-card">
+                        <h3>Innovative &amp; Modern</h3>
+                        <p>We are forward-thinking and tech-savvy. Our language reflects the cutting-edge nature of our platform.</p>
+                    </div>
+                    <div class="tone-card">
+                        <h3>Empowering &amp; Accessible</h3>
+                        <p>We break down complex financial concepts into simple, understandable terms to empower everyone to invest.</p>
+                    </div>
+                     <div class="tone-card">
+                        <h3>Professional &amp; Aspirational</h3>
+                        <p>Our tone is confident and inspires our users to build long-term wealth.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Business Card Section -->
+        <section id="business-card">
+            <div class="container">
+                <h2>Business Card Mockup</h2>
+                <p class="section-subtitle">A tangible representation of our brand, featuring only the logo for a clean, modern aesthetic.</p>
+                <div style="display: flex; justify-content: center;">
+                    <div class="business-card">
+                        <img src="https://i.ibb.co/cctvbVjM/brick.png" alt="FirstBrick Logo">
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>FirstBrick Brand Guide | © 2025</p>
+    </footer>
+
+</body></html>

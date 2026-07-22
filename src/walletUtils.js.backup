@@ -1,0 +1,438 @@
+/**
+ * Enhanced Wallet Utilities with Multi-Wallet Support
+ * Supports MetaMask, Brave Wallet, Rabby Wallet, and other EIP-1193 compatible wallets
+ */
+
+import { detectCoolWallet, connectCoolWallet } from './coolwallet.js';
+
+/**
+ * Detects available Ethereum providers in the browser
+ * Prioritizes wallet-specific providers over generic ones
+ */
+export const detectWalletProviders = () => {
+  const providers = [];
+
+  if (typeof window === 'undefined') {
+    return providers;
+  }
+
+  // Detect CoolWallet
+  const coolWalletProvider = detectCoolWallet();
+  if (coolWalletProvider) {
+    providers.push(coolWalletProvider);
+  }
+
+  // Check for Brave Wallet (highest priority in Brave browser)
+  if (window.ethereum?.isBraveWallet) {
+    providers.push({
+      name: 'Brave Wallet',
+      provider: window.ethereum,
+      isBrave: true,
+      icon: '🦁'
+    });
+  }
+
+  // Check for Rabby Wallet
+  if (window.ethereum?.isRabby && !window.ethereum?.isBraveWallet) {
+    providers.push({
+      name: 'Rabby Wallet',
+      provider: window.ethereum,
+      isRabby: true,
+      icon: '🐰'
+    });
+  }
+
+  // Check for MetaMask
+  if (window.ethereum?.isMetaMask && !window.ethereum?.isBraveWallet && !window.ethereum?.isRabby) {
+    providers.push({
+      name: 'MetaMask',
+      provider: window.ethereum,
+      isMetaMask: true,
+      icon: '🦊'
+    });
+  }
+
+  // Check for EIP-6963 providers (multi-wallet standard)
+  if (window.ethereum?.providers) {
+    window.ethereum.providers.forEach(provider => {
+      if (provider.isBraveWallet && !providers.some(p => p.isBrave)) {
+        providers.push({
+          name: 'Brave Wallet',
+          provider: provider,
+          isBrave: true,
+          icon: '🦁'
+        });
+      } else if (provider.isRabby && !providers.some(p => p.isRabby)) {
+        providers.push({
+          name: 'Rabby Wallet',
+          provider: provider,
+          isRabby: true,
+          icon: '🐰'
+        });
+      } else if (provider.isMetaMask && !providers.some(p => p.isMetaMask)) {
+        providers.push({
+          name: 'MetaMask',
+          provider: provider,
+          isMetaMask: true,
+          icon: '🦊'
+        });
+      }
+    });
+  }
+
+  // Generic ethereum provider (fallback)
+  if (providers.length === 0 && window.ethereum) {
+    providers.push({
+      name: 'Ethereum Wallet',
+      provider: window.ethereum,
+      icon: '💼'
+    });
+  }
+
+  return providers;
+};
+
+/**
+ * Gets the preferred provider based on browser and available wallets
+ * Priority: Brave Wallet (in Brave) > Rabby > MetaMask > First available
+ */
+export const getPreferredProvider = () => {
+  // CRITICAL FIX FOR iOS: Bypass complex provider detection on mobile
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile && window.ethereum) {
+    console.log('Mobile device detected. Using window.ethereum directly.');
+    return {
+      name: 'Mobile Wallet',
+      provider: window.ethereum,
+      isMetaMask: window.ethereum.isMetaMask, // Preserve MetaMask flag if present
+      icon: '📱'
+    };
+  }
+
+  // --- DESKTOP LOGIC ---
+  const providers = detectWalletProviders();
+
+  if (providers.length === 0) {
+    return null;
+  }
+
+  // Check if user is on Brave browser
+  const isBraveBrowser = typeof navigator.brave?.isBrave === 'function';
+
+  // If on Brave browser, prefer Brave Wallet
+  if (isBraveBrowser) {
+    const braveProvider = providers.find(p => p.isBrave);
+    if (braveProvider) {
+      console.log('Brave browser detected. Preferring Brave Wallet.');
+      return braveProvider;
+    }
+  }
+
+  // Prefer Rabby Wallet if available
+  const rabbyProvider = providers.find(p => p.isRabby);
+  if (rabbyProvider) {
+    console.log('Rabby Wallet detected. Preferring Rabby Wallet.');
+    return rabbyProvider;
+  }
+
+  // Fallback to MetaMask
+  const metamaskProvider = providers.find(p => p.isMetaMask);
+  if (metamaskProvider) {
+    console.log('MetaMask detected. Preferring MetaMask.');
+    return metamaskProvider;
+  }
+
+  // Return the first available provider as a last resort
+  console.log('No specific preferred provider found. Using first available.');
+  return providers[0];
+};
+
+/**
+ * Connect to wallet with Brave optimization
+ */
+export const connectWallet = async (targetChainId = '0x539') => {
+  try {
+    const preferredProvider = getPreferredProvider();
+
+    if (!preferredProvider) {
+      return {
+        success: false,
+        error: 'No wallet provider found',
+        shouldInstall: true
+      };
+    }
+
+    // Handle CoolWallet connection separately
+    if (preferredProvider.isCoolWallet) {
+        const { provider, address, walletName } = await connectCoolWallet();
+        return {
+            success: true,
+            address,
+            provider,
+            walletName
+        };
+    }
+
+    const { provider, name } = preferredProvider;
+
+    // Request accounts
+    const accounts = await provider.request({
+      method: 'eth_requestAccounts'
+    });
+
+    if (!accounts || accounts.length === 0) {
+      return {
+        success: false,
+        error: 'No accounts found'
+      };
+    }
+
+    // Check and switch chain if needed
+    const currentChainId = await provider.request({
+      method: 'eth_chainId'
+    });
+
+    if (currentChainId !== targetChainId) {
+      try {
+        await provider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: targetChainId }],
+        });
+      } catch (switchError) {
+        // Chain doesn't exist, might need to add it
+        if (switchError.code === 4902) {
+          return {
+            success: false,
+            error: 'Network not found. Please add the network manually.',
+            errorCode: 4902
+          };
+        }
+        throw switchError;
+      }
+    }
+
+    return {
+      success: true,
+      address: accounts[0],
+      provider: provider,
+      walletName: name
+    };
+
+  } catch (error) {
+    console.error('Wallet connection error:', error);
+
+    // User rejected the connection
+    if (error.code === 4001) {
+      return {
+        success: false,
+        error: 'Connection request rejected by user',
+        errorCode: 4001
+      };
+    }
+
+    return {
+      success: false,
+      error: error.message || 'Failed to connect wallet'
+    };
+  }
+};
+
+/**
+ * Get current connected address
+ */
+export const getCurrentAddress = async () => {
+  try {
+    const preferredProvider = getPreferredProvider();
+
+    if (!preferredProvider) {
+      return null;
+    }
+
+    const accounts = await preferredProvider.provider.request({
+      method: 'eth_accounts'
+    });
+
+    return accounts && accounts.length > 0 ? accounts[0] : null;
+  } catch (error) {
+    console.error('Error getting current address:', error);
+    return null;
+  }
+};
+
+/**
+ * Listen for account changes
+ */
+export const onAccountsChanged = (callback) => {
+  const preferredProvider = getPreferredProvider();
+
+  if (!preferredProvider) {
+    return null;
+  }
+
+  const handler = (accounts) => {
+    callback(accounts && accounts.length > 0 ? accounts[0] : null);
+  };
+
+  preferredProvider.provider.on('accountsChanged', handler);
+
+  // Return cleanup function
+  return () => {
+    if (preferredProvider.provider.removeListener) {
+      preferredProvider.provider.removeListener('accountsChanged', handler);
+    }
+  };
+};
+
+/**
+ * Listen for chain changes
+ */
+export const onChainChanged = (callback) => {
+  const preferredProvider = getPreferredProvider();
+
+  if (!preferredProvider) {
+    return null;
+  }
+
+  preferredProvider.provider.on('chainChanged', callback);
+
+  // Return cleanup function
+  return () => {
+    if (preferredProvider.provider.removeListener) {
+      preferredProvider.provider.removeListener('chainChanged', callback);
+    }
+  };
+};
+
+/**
+ * Check if wallet is installed
+ */
+export const isWalletInstalled = () => {
+  const providers = detectWalletProviders();
+  return providers.length > 0;
+};
+
+/**
+ * Get wallet installation URL based on browser
+ */
+export const getWalletInstallUrl = async () => {
+  // Check if using Brave browser
+  if (navigator.brave && typeof navigator.brave.isBrave === 'function') {
+    try {
+      const isBrave = await navigator.brave.isBrave();
+      if (isBrave) {
+        return {
+          url: 'brave://wallet',
+          message: 'Enable Brave Wallet in browser settings',
+          walletName: 'Brave Wallet'
+        };
+      }
+    } catch (e) {
+      // Not Brave browser
+    }
+  }
+
+  // Default to MetaMask for other browsers
+  return {
+    url: 'https://metamask.io/download/',
+    message: 'Install MetaMask',
+    walletName: 'MetaMask'
+  };
+};
+
+/**
+ * Format address for display
+ */
+export const formatAddress = (address, startLength = 6, endLength = 4) => {
+  if (!address) return '';
+  return `${address.substring(0, startLength)}...${address.substring(address.length - endLength)}`;
+};
+
+/**
+ * Get ethers Web3Provider using the preferred provider
+ * This ensures Brave Wallet is used on Brave browser
+ *
+ * @returns {object} ethers Web3Provider instance
+ */
+export const getEthersProvider = () => {
+  const ethers = require('ethers');
+  const preferredProvider = getPreferredProvider();
+
+  if (!preferredProvider) {
+    throw new Error('No wallet provider found. Please install a Web3 wallet.');
+  }
+
+  return new ethers.providers.Web3Provider(preferredProvider.provider);
+};
+
+/**
+ * Get ethers signer using the preferred provider
+ * This is a convenience function for getting a signer
+ *
+ * @returns {object} ethers Signer instance
+ */
+export const getEthersSigner = () => {
+  const provider = getEthersProvider();
+  return provider.getSigner();
+};
+
+/**
+ * Get current chain ID from wallet
+ * @returns {Promise<string>} Current chain ID in hex format
+ */
+export const getCurrentChainId = async () => {
+  try {
+    const preferredProvider = getPreferredProvider();
+    if (!preferredProvider) {
+      throw new Error('No wallet provider found');
+    }
+
+    const chainId = await preferredProvider.provider.request({
+      method: 'eth_chainId'
+    });
+    return chainId;
+  } catch (error) {
+    console.error('Error getting current chain ID:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get network name from chain ID
+ * @param {string} chainId - Chain ID in hex format
+ * @returns {string} Human-readable network name
+ */
+export const getNetworkName = (chainId) => {
+  const chainIdDecimal = parseInt(chainId, 16);
+
+  const networks = {
+    1: 'Ethereum Mainnet',
+    3: 'Ropsten Testnet',
+    4: 'Rinkeby Testnet',
+    5: 'Goerli Testnet',
+    11155111: 'Sepolia Testnet',
+    56: 'BNB Smart Chain',
+    137: 'Polygon Mainnet',
+    1337: 'BrickChain (Localhost)',
+    31337: 'Hardhat Local'
+  };
+
+  return networks[chainIdDecimal] || `Unknown Network (Chain ID: ${chainIdDecimal})`;
+};
+
+/**
+ * Get BrickChain network configuration
+ * @returns {object} Network configuration for adding to wallet
+ */
+export const getBrickChainConfig = () => {
+  return {
+    chainId: '0x539', // 1337 in hex
+    chainName: 'BrickChain',
+    nativeCurrency: {
+      name: 'Ether',
+      symbol: 'ETH',
+      decimals: 18
+    },
+    rpcUrls: ['https://rpc.entailabs.com'],
+    blockExplorerUrls: null
+  };
+};

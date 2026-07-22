@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Manager - Add Investor Profiles</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+
+        .result h3 {
+            margin-bottom: 10px;
+        }
+
+        .result code {
+            display: block;
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            word-wrap: break-word;
+        }
+
+        .profiles-list {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .profiles-list h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .profile-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .profile-item img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+
+        .profile-item .info {
+            flex: 1;
+        }
+
+        .profile-item .name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .profile-item .address {
+            font-size: 0.875rem;
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 Profile Manager</h1>
+            <p>Add investor profiles to the marketplace</p>
+        </div>
+
+        <div class="content">
+            <form id="profileForm">
+                <div class="form-group">
+                    <label for="address">Wallet Address *</label>
+                    <input
+                        type="text"
+                        id="address"
+                        placeholder="0x6923ddaa0402be804cabf525e6a199772e025ba7"
+                        required
+                    >
+                    <small>The Ethereum wallet address of the investor</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="name">Display Name *</label>
+                    <input
+                        type="text"
+                        id="name"
+                        placeholder="John Doe"
+                        required
+                    >
+                    <small>The name to display in the investors tab</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="imageUrl">Profile Picture URL *</label>
+                    <input
+                        type="url"
+                        id="imageUrl"
+                        placeholder="https://example.com/picture.jpg"
+                        required
+                    >
+                    <small>Direct link to the profile picture (JPEG, PNG, etc.)</small>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">
+                    Add Profile to IPFS
+                </button>
+            </form>
+
+            <div class="result" id="result"></div>
+
+            <div class="profiles-list">
+                <h2>Current Profiles</h2>
+                <div id="profilesList" class="loading">Loading profiles...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const IPFS_GATEWAY = 'https://rpc.entailabs.com/ipfs/';
+        const IPFS_API = 'https://rpc.entailabs.com/ipfs-api';
+        const DEFAULT_HASH = 'QmQWbA37pTC6VdfBQGqqgxrU9KnfKKcEUdvrPPbEPWwRUk';
+
+        // Load current profiles
+        async function loadProfiles() {
+            try {
+                const response = await fetch(`${IPFS_GATEWAY}${DEFAULT_HASH}`);
+                const profiles = await response.json();
+
+                const listEl = document.getElementById('profilesList');
+                listEl.innerHTML = '';
+
+                if (Object.keys(profiles).length === 0) {
+                    listEl.innerHTML = '<div class="loading">No profiles found</div>';
+                    return;
+                }
+
+                Object.entries(profiles).forEach(([address, data]) => {
+                    const item = document.createElement('div');
+                    item.className = 'profile-item';
+                    item.innerHTML = `
+                        <img src="${data.profilePicture}" alt="${data.name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2240%22%3E?%3C/text%3E%3C/svg%3E'">
+                        <div class="info">
+                            <div class="name">${data.name}</div>
+                            <div class="address">${address}</div>
+                        </div>
+                    `;
+                    listEl.appendChild(item);
+                });
+            } catch (error) {
+                document.getElementById('profilesList').innerHTML =
+                    '<div class="loading">Error loading profiles</div>';
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const address = document.getElementById('address').value.trim().toLowerCase();
+            const name = document.getElementById('name').value.trim();
+            const imageUrl = document.getElementById('imageUrl').value.trim();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const resultEl = document.getElementById('result');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Adding profile...';
+            resultEl.style.display = 'none';
+
+            try {
+                // Fetch current profiles
+                const response = await fetch(`${IPFS_GATEWAY}${DEFAULT_HASH}`);
+                const profiles = await response.json();
+
+                // Add new profile
+                profiles[address] = { name, profilePicture: imageUrl };
+
+                // Upload to IPFS
+                const formData = new FormData();
+                const blob = new Blob([JSON.stringify(profiles, null, 2)], { type: 'application/json' });
+                formData.append('file', blob, 'profiles.json');
+
+                const uploadResponse = await fetch(`${IPFS_API}/add?pin=true`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await uploadResponse.json();
+                const newHash = result.Hash;
+
+                // Show success
+                resultEl.className = 'result success';
+                resultEl.style.display = 'block';
+                resultEl.innerHTML = `
+                    <h3>✅ Profile Added Successfully!</h3>
+                    <p><strong>${name}</strong> has been added to IPFS.</p>
+                    <p>New IPFS Hash: <code>${newHash}</code></p>
+                    <p><strong>Next Steps:</strong></p>
+                    <ol style="margin-left: 20px; margin-top: 10px;">
+                        <li>Update <code>src/profileService.js</code> with the new hash</li>
+                        <li>Rebuild the site: <code>npm run build</code></li>
+                        <li>Or share with all users in browser console:
+                            <code>localStorage.setItem('profiles_ipfs_hash', '${newHash}'); location.reload();</code>
+                        </li>
+                    </ol>
+                `;
+
+                // Reload profiles list
+                setTimeout(loadProfiles, 1000);
+
+                // Clear form
+                document.getElementById('profileForm').reset();
+
+            } catch (error) {
+                resultEl.className = 'result error';
+                resultEl.style.display = 'block';
+                resultEl.innerHTML = `
+                    <h3>❌ Error</h3>
+                    <p>${error.message}</p>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Profile to IPFS';
+            }
+        });
+
+        // Load profiles on page load
+        loadProfiles();
+    </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "files": {
+    "main.css": "/static/css/main.5095f2a6.css",
+    "main.js": "/static/js/main.b8b26a53.js",
+    "static/js/453.30121d87.chunk.js": "/static/js/453.30121d87.chunk.js",
+    "static/media/nft-in-wallet-2.png": "/static/media/nft-in-wallet-2.0db04dea30f80e03ce9f.png",
+    "static/media/tokens-in-wallet.jpg": "/static/media/tokens-in-wallet.6b78f6466d0e5b66c796.jpg",
+    "static/media/nft-in-wallet-1.jpg": "/static/media/nft-in-wallet-1.e13e8cc8ef2345fa5aad.jpg",
+    "index.html": "/index.html",
+    "main.5095f2a6.css.map": "/static/css/main.5095f2a6.css.map",
+    "main.b8b26a53.js.map": "/static/js/main.b8b26a53.js.map",
+    "453.30121d87.chunk.js.map": "/static/js/453.30121d87.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5095f2a6.css",
+    "static/js/main.b8b26a53.js"
+  ]
+}

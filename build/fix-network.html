@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Network Connection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            margin: 10px 5px;
+        }
+        .btn:hover { background-color: #0056b3; }
+        .btn-success { background-color: #28a745; }
+        .btn-success:hover { background-color: #218838; }
+        .status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 5px solid #ccc;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-left-color: #17a2b8;
+            color: #0c5460;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Network Connection Fixer</h1>
+        <p>This tool will help you connect to the correct blockchain where your data is stored.</p>
+
+        <button class="btn" onclick="diagnose()">🔍 Diagnose Issue</button>
+        <button class="btn btn-success" onclick="fixNetwork()">✅ Add Correct Network</button>
+
+        <div id="output"></div>
+    </div>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.6.umd.min.js"></script>
+    <script>
+        const CONTRACT_ADDRESS = "0x0165878A594ca255338adfa4d48449f69242Eb8F";
+        const PERSISTENT_RPC = "http://rpc.entailabs.com:8545";
+
+        async function diagnose() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<div class="status info">Diagnosing...</div>';
+
+            if (typeof window.ethereum === 'undefined') {
+                output.innerHTML = `
+                    <div class="status error">
+                        <h3>❌ MetaMask Not Installed</h3>
+                        <p>Please install MetaMask browser extension first.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                // Request account access
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                const chainId = await ethereum.request({ method: 'eth_chainId' });
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+                output.innerHTML = `
+                    <div class="status info">
+                        <h3>📊 Current Connection</h3>
+                        <p><strong>Wallet:</strong> <code>${accounts[0]}</code></p>
+                        <p><strong>Chain ID:</strong> ${parseInt(chainId, 16)}</p>
+                    </div>
+                `;
+
+                // Check if we can read the contract
+                const contract = new ethers.Contract(
+                    CONTRACT_ADDRESS,
+                    [
+                        "function getPropertyData(uint256) view returns (tuple(uint256,uint256,uint256,uint256,uint256,uint8))",
+                        "function getInvestorList(uint256) view returns (address[])"
+                    ],
+                    provider
+                );
+
+                try {
+                    const prop1 = await contract.getPropertyData(1);
+                    const investors = await contract.getInvestorList(1);
+
+                    if (prop1[0].toString() === "2800000") {
+                        output.innerHTML += `
+                            <div class="status success">
+                                <h3>✅ CORRECT! You're on the Persistent Blockchain!</h3>
+                                <p><strong>Contract:</strong> <code>${CONTRACT_ADDRESS}</code></p>
+                                <p><strong>Token 1 Total Bricks:</strong> ${prop1[0].toString()}</p>
+                                <p><strong>Token 1 Available:</strong> ${prop1[1].toString()}</p>
+                                <p><strong>Investors:</strong> ${investors.length}</p>
+                                <p style="color: green; font-weight: bold; font-size: 18px;">
+                                    🎉 Your data is accessible! Go back to the marketplace app.
+                                </p>
+                            </div>
+                        `;
+
+                        // Check user's balance
+                        try {
+                            const balance1 = await contract.balanceOf(accounts[0], 1);
+                            const balance2 = await contract.balanceOf(accounts[0], 2);
+
+                            if (balance1.gt(0) || balance2.gt(0)) {
+                                output.innerHTML += `
+                                    <div class="status success">
+                                        <h3>💰 Your Portfolio</h3>
+                                        <p><strong>Token 1:</strong> ${balance1.toString()} bricks</p>
+                                        <p><strong>Token 2:</strong> ${balance2.toString()} bricks</p>
+                                        <p><strong>Total Value:</strong> ${balance1.add(balance2).toString()} BRK</p>
+                                    </div>
+                                `;
+                            }
+                        } catch (e) {
+                            console.log("Error checking balance:", e);
+                        }
+
+                        return;
+                    }
+                } catch (error) {
+                    output.innerHTML += `
+                        <div class="status error">
+                            <h3>❌ WRONG NETWORK! Cannot Read Contract</h3>
+                            <p><strong>Error:</strong> <code>${error.message}</code></p>
+                            <p>You're connected to chain ID 1337, but it's the WRONG 1337 network.</p>
+                            <p>You're probably on <strong>localhost:8545</strong> (empty test network)</p>
+                            <p>You need to connect to <strong>rpc.entailabs.com:8545</strong> (persistent blockchain with your data)</p>
+                        </div>
+
+                        <div class="status warning">
+                            <h3>🔧 How to Fix:</h3>
+                            <div class="step">
+                                <h4>Step 1: Remove or Edit Wrong Network</h4>
+                                <p>1. Open MetaMask</p>
+                                <p>2. Click the network dropdown</p>
+                                <p>3. Find any network with Chain ID 1337</p>
+                                <p>4. Click the 3 dots → "Edit" or "Delete"</p>
+                                <p>5. If RPC URL is <code>http://localhost:8545</code> or <code>http://127.0.0.1:8545</code>, delete it</p>
+                            </div>
+
+                            <div class="step">
+                                <h4>Step 2: Add Correct Network</h4>
+                                <p>Click the button below to add the correct network:</p>
+                                <button class="btn btn-success" onclick="fixNetwork()">
+                                    ✅ Add Loyalty Rewards Chain (Persistent)
+                                </button>
+                            </div>
+
+                            <div class="step">
+                                <h4>Step 3: Verify</h4>
+                                <p>After adding, switch to the new network and click "Diagnose" again</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                output.innerHTML = `
+                    <div class="status error">
+                        <h3>❌ Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function fixNetwork() {
+            const output = document.getElementById('output');
+
+            try {
+                // First, try to switch to it if it exists
+                try {
+                    await ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x539' }], // 1337 in hex
+                    });
+
+                    output.innerHTML = `
+                        <div class="status success">
+                            <h3>✅ Switched to Network!</h3>
+                            <p>Now click "Diagnose" to verify you're on the correct network.</p>
+                        </div>
+                    `;
+                    return;
+                } catch (switchError) {
+                    // If network doesn't exist, add it
+                    if (switchError.code === 4902) {
+                        await ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0x539', // 1337 in hex
+                                chainName: 'Loyalty Rewards Chain (Persistent)',
+                                nativeCurrency: {
+                                    name: 'ETH',
+                                    symbol: 'ETH',
+                                    decimals: 18
+                                },
+                                rpcUrls: [PERSISTENT_RPC],
+                                blockExplorerUrls: ['https://explorer.entailabs.com']
+                            }]
+                        });
+
+                        output.innerHTML = `
+                            <div class="status success">
+                                <h3>✅ Network Added Successfully!</h3>
+                                <p>Network: <strong>Loyalty Rewards Chain (Persistent)</strong></p>
+                                <p>RPC: <code>${PERSISTENT_RPC}</code></p>
+                                <p>Chain ID: 1337</p>
+                                <p><strong>Next:</strong> Click "Diagnose" to verify connection</p>
+                                <button class="btn" onclick="diagnose()">🔍 Diagnose Now</button>
+                            </div>
+                        `;
+                    } else {
+                        throw switchError;
+                    }
+                }
+            } catch (error) {
+                output.innerHTML = `
+                    <div class="status error">
+                        <h3>❌ Error Adding Network</h3>
+                        <p>${error.message}</p>
+                        <p><strong>Manual Setup:</strong></p>
+                        <ol>
+                            <li>Open MetaMask → Settings → Networks</li>
+                            <li>Click "Add Network"</li>
+                            <li>Enter:
+                                <ul>
+                                    <li>Network Name: <code>Loyalty Rewards Chain</code></li>
+                                    <li>RPC URL: <code>${PERSISTENT_RPC}</code></li>
+                                    <li>Chain ID: <code>1337</code></li>
+                                    <li>Currency: <code>ETH</code></li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

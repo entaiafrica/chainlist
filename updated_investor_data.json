@@ -1,0 +1,41 @@
+{
+  "0x3f3d526702633b71d0f96c621ceefd2cbb88d10d": {
+    "name": "Pam Pam",
+    "profilePicture": "https://rpc.entailabs.com/ipfs/QmVAHp66ZqFoxyX8MLvWk6UaxHZTpc4YHrEN6hEqEBB7Ww"
+  },
+  "0x6923ddaa0402be804cabf525e6a199772e025ba7": {
+    "name": "Zola Nobomba",
+    "profilePicture": "ipfs://QmQjTD1ese2Em2g8Gr225DsERphcMffe81s77ZfttNc1cP"
+  },
+  "0x52b83c7ecefafb399a299fd4a780b15d29e26b49": {
+    "name": "Richmask",
+    "profilePicture": "ipfs://QmWCmrHB1r5npikCzJqWtQ7pakWBzJBqnD5NKfA24w1HCz"
+  },
+  "0x8da6ce40bf4f1c5333d7316e789c755384c290d5": {
+    "name": "Mask",
+    "profilePicture": "https://rpc.entailabs.com/ipfs/QmeAa2hBNiBwESp1ipU7nQLZ8D49zJ6cW6qCKLDz7QZBzX"
+  },
+  "0x8b5e1de84b669aa6db1f12bfd3c1132187a7d030": {
+    "name": "MoneyMaker",
+    "profilePicture": "https://rpc.entailabs.com/ipfs/QmXTeD64csFUrBAN2rgVDtiyzExK2khZ9jVPM28f9YiYao"
+  },
+  "0x3536c224c57da6671906af52fe21b81f962f2cb5": {
+    "name": "MembasOnly",
+    "profilePicture": "ipfs://QmeMUzqDrgu15uzj9U92jHogER8xeuvzAc7yNjxnVpA1P2"
+  },
+  "0xae48395d7930ca91ec7fa1b4c3aa9cf945145011": {
+    "name": "Zola Noboma",
+    "gender": "female",
+    "employment": "employed",
+    "salary": "22000 - 35000",
+    "profilePicture": "https://images.unsplash.com/photo-1573497019418-b400bb3ab074?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGFmcmljYW4lMjB3b21hbnxlbnwwfHwwfHx8MA%3D%3D"
+  },
+  "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
+    "name": "Mandisa Khumalo",
+    "profilePicture": "ipfs://QmY299GKFoHSsZPnHZwQueayuc2GTarLAPJCMqYqqbZJHt"
+  },
+  "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
+    "name": "PropVest",
+    "profilePicture": "ipfs://QmdStiU3SoDuG419bkbnRV4HkVVL32zf52DK7FxyGTqo6q"
+  }
+}

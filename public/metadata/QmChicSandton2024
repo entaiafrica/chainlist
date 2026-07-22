@@ -1,0 +1,37 @@
+{
+  "name": "Chic Sandton Apartment",
+  "description": "A stunning 2-bedroom, 2-bathroom apartment in the heart of Sandton. This modern unit boasts high-end finishes, an open-plan living area, and a balcony with city views. The complex includes a pool, gym, and 24-hour security.",
+  "image": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2940&auto=format&fit=crop",
+  "external_url": "https://firstbrick.com/property/chic-sandton-apartment",
+  "attributes": [
+    { "trait_type": "Property Type", "value": "Apartment" },
+    { "trait_type": "Total Value", "value": "R2,800,000" },
+    { "trait_type": "Annual Yield", "value": "7.2%" },
+    { "trait_type": "Risk Rating", "value": "Low" },
+    { "trait_type": "Bedrooms", "display_type": "number", "value": 2 },
+    { "trait_type": "Bathrooms", "display_type": "number", "value": 2 },
+    { "trait_type": "Year Built", "display_type": "number", "value": 2018 },
+    { "trait_type": "Location", "value": "Sandton, Johannesburg" }
+  ],
+  "properties": {
+    "propertyAddress": "The Capital Empire, 177 Empire Pl, Sandhurst, Sandton, 2196",
+    "gps": "-26.1035, 28.0497",
+    "totalBricks": 2800000,
+    "bricksForBuyer": 700000,
+    "bricksForInvestors": 2100000,
+    "pricePerBrick": "1.00 BRK",
+    "mortgageAmount": 2100000,
+    "interestRate": 8.5,
+    "monthlyPayment": 18050,
+    "mortgageTerm": 20,
+    "downPayment": 700000,
+    "annualYield": 7.2,
+    "propertyAppreciation": 4.5,
+    "expectedTotalReturn": 11.7,
+    "images": [
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2940&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1600585152915-d208bec867a1?q=80&w=2872&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1600607687939-ce8a6a25118c?q=80&w=2940&auto=format&fit=crop"
+    ]
+  }
+}

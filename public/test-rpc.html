@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RPC Connectivity Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+        .result { padding: 10px; margin: 10px 0; border-left: 3px solid #0f0; background: #000; }
+        .error { border-left-color: #f00; color: #f00; }
+        button { background: #0f0; color: #000; padding: 15px 30px; font-weight: bold; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>RPC Endpoint Connectivity Test</h1>
+    <button onclick="testRPC()">Test RPC Connection</button>
+    <div id="results"></div>
+
+    <script>
+        async function testRPC() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            function log(msg, isError = false) {
+                const div = document.createElement('div');
+                div.className = 'result' + (isError ? ' error' : '');
+                div.textContent = msg;
+                resultsDiv.appendChild(div);
+            }
+
+            log('Testing RPC endpoint: https://rpc.entailabs.com');
+
+            // Test 1: Basic fetch
+            try {
+                log('\n[Test 1] Simple fetch request...');
+                const response = await fetch('https://rpc.entailabs.com', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'eth_blockNumber',
+                        params: [],
+                        id: 1
+                    })
+                });
+
+                log(`✓ Response status: ${response.status}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                log(`✓ Block number: ${parseInt(data.result, 16)}`);
+                log('✓ RPC endpoint is accessible from browser!');
+
+                // Test 2: Contract call
+                log('\n[Test 2] Testing eth_call to contract...');
+                const callResponse = await fetch('https://rpc.entailabs.com', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'eth_call',
+                        params: [{
+                            to: '0x9E545E3C0baAB3E08CdfD552C960A1050f373042',
+                            data: '0xbb632ab80000000000000000000000000000000000000000000000000000000000000001'
+                        }, 'latest'],
+                        id: 42
+                    })
+                });
+
+                if (!callResponse.ok) {
+                    throw new Error(`HTTP ${callResponse.status}`);
+                }
+
+                const callData = await callResponse.json();
+                if (callData.error) {
+                    throw new Error(callData.error.message);
+                }
+
+                log('✓ eth_call successful!');
+                log(`✓ Result: ${callData.result.substring(0, 20)}...`);
+                log('\n✅ ALL TESTS PASSED! RPC endpoint works from your browser.');
+
+            } catch (error) {
+                log(`\n❌ ERROR: ${error.message}`, true);
+                log('', true);
+                log('Possible causes:', true);
+                log('1. CORS - RPC endpoint blocks browser requests', true);
+                log('2. Network - RPC endpoint not accessible from your location', true);
+                log('3. Firewall - Your network blocks the connection', true);
+                log('', true);
+                log('Full error details:', true);
+                log(error.toString(), true);
+            }
+        }
+    </script>
+</body>
+</html>

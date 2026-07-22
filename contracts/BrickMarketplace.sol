@@ -1,0 +1,414 @@
+//SPDX-License-Identifier: Unlicense
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+
+contract BrickMarketplace is ERC1155, ERC1155Supply, ReentrancyGuard, ERC2771Context {
+    using Counters for Counters.Counter;
+
+    Counters.Counter private _tokenIds;
+
+    address payable public owner;
+    address public platformWallet = 0x8da6CE40Bf4F1c5333D7316e789c755384c290d5;
+
+    IERC20 public brkToken;
+
+    uint256 public listPrice = 1000 * 10**18; // 1000 BRK
+
+    // Gas sponsorship: auto-fund investors with ETH for transactions
+    uint256 public gasStipend = 0.1 ether; // Amount of ETH to send to new investors
+    uint256 public minGasBalance = 0.05 ether; // Min balance before sending stipend
+    bool public gasSponsorshipEnabled = true; // Enable/disable gas sponsorship
+
+    enum PropertyStatus {
+        PENDING,        // Submitted, waiting for buyer deposit
+        ACTIVE,         // Buyer paid, investors can purchase
+        FUNDED,         // All bricks sold, deal complete
+        FAILED,         // Funding failed, refunds available
+        CLOSED          // Property fully paid off
+    }
+
+    struct PropertyData {
+        uint256 totalBricks;
+        uint256 bricksAvailable;
+        uint256 pricePerBrick;
+        uint256 depositAmount;
+        uint256 otpDeadline;        // Timestamp when OTP expires
+        PropertyStatus status;
+    }
+
+    mapping(uint256 => PropertyData) public properties;
+    mapping(uint256 => string) private propertyMetadataURIs;
+    mapping(uint256 => address) public propertyCreator;
+    mapping(uint256 => address) public propertyBuyer; // Homebuyer who pays deposit and installments
+    mapping(uint256 => address) public propertyTrustWallet; // Per-property trust wallet
+    mapping(uint256 => address[]) private propertyInvestors;
+    mapping(uint256 => mapping(address => bool)) private isInvestor;
+
+    event PropertySubmitted(uint256 indexed tokenId, address indexed buyer, uint256 depositRequired);
+    event PropertyActivated(uint256 indexed tokenId, address indexed buyer, uint256 depositPaid, uint256 bricksToInvestors);
+    event BricksPurchased(uint256 indexed tokenId, address indexed buyer, uint256 amount);
+    event PropertyFunded(uint256 indexed tokenId);
+    event PropertyFailed(uint256 indexed tokenId);
+    event OTPExtended(uint256 indexed tokenId, uint256 newDeadline);
+    event RefundClaimed(uint256 indexed tokenId, address indexed investor, uint256 amount);
+    event PaymentDistributed(uint256 indexed tokenId, address indexed investor, uint256 amount);
+    event GasStipendSent(address indexed investor, uint256 amount);
+
+    modifier onlyOwner() {
+        require(_msgSender() == owner, "Only owner");
+        _;
+    }
+
+    constructor(string memory _uri, address trustedForwarder) ERC1155(_uri) ERC2771Context(trustedForwarder) {
+        owner = payable(_msgSender());
+    }
+
+    // Allow contract to receive ETH for gas sponsorship
+    receive() external payable {}
+
+    function _beforeTokenTransfer(
+        address operator,
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    ) internal virtual override(ERC1155, ERC1155Supply) {
+        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+    }
+
+    // Override _msgSender() and _msgData() to resolve Context inheritance conflict
+    function _msgSender() internal view virtual override(Context, ERC2771Context) returns (address) {
+        return ERC2771Context._msgSender();
+    }
+
+    function _msgData() internal view virtual override(Context, ERC2771Context) returns (bytes calldata) {
+        return ERC2771Context._msgData();
+    }
+
+    function _contextSuffixLength() internal view virtual override(Context, ERC2771Context) returns (uint256) {
+        return ERC2771Context._contextSuffixLength();
+    }
+
+    function setBrkToken(address _brkTokenAddress) public onlyOwner {
+        brkToken = IERC20(_brkTokenAddress);
+    }
+
+    function setPlatformWallet(address _platformWallet) public onlyOwner {
+        platformWallet = _platformWallet;
+    }
+
+    // Configure gas sponsorship settings
+    function setGasStipend(uint256 _gasStipend) public onlyOwner {
+        gasStipend = _gasStipend;
+    }
+
+    function setMinGasBalance(uint256 _minGasBalance) public onlyOwner {
+        minGasBalance = _minGasBalance;
+    }
+
+    function setGasSponsorshipEnabled(bool _enabled) public onlyOwner {
+        gasSponsorshipEnabled = _enabled;
+    }
+
+    // Withdraw ETH from contract (for gas sponsorship management)
+    function withdrawETH(uint256 amount) public onlyOwner {
+        require(address(this).balance >= amount, "Insufficient balance");
+        payable(owner).transfer(amount);
+    }
+
+    function updateMetadataURI(uint256 tokenId, string memory _newURI) public onlyOwner {
+        require(properties[tokenId].totalBricks > 0, "Property does not exist");
+        propertyMetadataURIs[tokenId] = _newURI;
+        emit URI(_newURI, tokenId);
+    }
+
+    // Note: NFTs are transferred using internal _safeTransferFrom which bypasses approval
+
+    // Submit property for listing (requires buyer deposit to activate)
+    function submitProperty(
+        string memory _metadataURI,
+        uint256 _totalBricks,
+        uint256 _pricePerBrick,
+        uint256 _depositAmount,
+        address _buyer,
+        address _trustWallet,
+        uint256 _otpPeriodDays
+    ) public nonReentrant returns (uint256) {
+        require(_totalBricks > 0, "Invalid brick amount");
+        require(_pricePerBrick > 0, "Invalid price");
+        require(_depositAmount > 0, "Invalid deposit amount");
+        require(_buyer != address(0), "Invalid buyer address");
+        require(_trustWallet != address(0), "Invalid trust wallet address");
+        require(_otpPeriodDays > 0 && _otpPeriodDays <= 180, "OTP period must be 1-180 days");
+
+        // Charge listing fee
+        require(brkToken.allowance(_msgSender(), address(this)) >= listPrice, "Insufficient allowance");
+        brkToken.transferFrom(_msgSender(), platformWallet, listPrice);
+
+        // Create new token ID (but DON'T mint yet - waiting for buyer deposit)
+        _tokenIds.increment();
+        uint256 newTokenId = _tokenIds.current();
+
+        // Calculate bricks after deposit
+        uint256 bricksForDeposit = _depositAmount / _pricePerBrick;
+        require(bricksForDeposit > 0, "Deposit too small");
+        require(bricksForDeposit < _totalBricks, "Deposit too large");
+
+        uint256 bricksForInvestors = _totalBricks - bricksForDeposit;
+
+        // Calculate OTP deadline
+        uint256 otpDeadline = block.timestamp + (_otpPeriodDays * 1 days);
+
+        // Store property data (PENDING until buyer pays deposit)
+        properties[newTokenId] = PropertyData({
+            totalBricks: _totalBricks,
+            bricksAvailable: bricksForInvestors,
+            pricePerBrick: _pricePerBrick,
+            depositAmount: _depositAmount,
+            otpDeadline: otpDeadline,
+            status: PropertyStatus.PENDING
+        });
+
+        propertyMetadataURIs[newTokenId] = _metadataURI;
+        propertyCreator[newTokenId] = _msgSender();
+        propertyBuyer[newTokenId] = _buyer;
+        propertyTrustWallet[newTokenId] = _trustWallet;
+
+        emit PropertySubmitted(newTokenId, _buyer, _depositAmount);
+
+        return newTokenId;
+    }
+
+    // Buyer pays deposit - THIS ACTIVATES THE PROPERTY AND MINTS NFTs
+    function payDeposit(uint256 tokenId) public nonReentrant {
+        PropertyData storage prop = properties[tokenId];
+        require(prop.totalBricks > 0, "Property does not exist");
+        require(prop.status == PropertyStatus.PENDING, "Property not in pending status");
+        require(_msgSender() == propertyBuyer[tokenId], "Only designated buyer can pay deposit");
+        require(block.timestamp <= prop.otpDeadline, "OTP period expired");
+
+        address trustWallet = propertyTrustWallet[tokenId];
+        require(trustWallet != address(0), "Trust wallet not set");
+
+        uint256 depositAmount = prop.depositAmount;
+        require(depositAmount > 0, "Invalid deposit amount");
+
+        // Calculate bricks for deposit
+        uint256 bricksForDeposit = depositAmount / prop.pricePerBrick;
+        uint256 bricksForInvestors = prop.totalBricks - bricksForDeposit;
+
+        // Transfer BRK deposit from buyer to trust wallet
+        require(brkToken.allowance(_msgSender(), address(this)) >= depositAmount, "Insufficient BRK allowance");
+        brkToken.transferFrom(_msgSender(), trustWallet, depositAmount);
+
+        // Mint buyer's portion directly to buyer
+        _mint(_msgSender(), tokenId, bricksForDeposit, "");
+
+        // Mint investor portion to trust wallet
+        _mint(trustWallet, tokenId, bricksForInvestors, "");
+
+        // Activate property for investor purchases
+        prop.status = PropertyStatus.ACTIVE;
+
+        emit PropertyActivated(tokenId, _msgSender(), depositAmount, bricksForInvestors);
+    }
+
+    // Buy bricks: transfer NFTs from trust wallet to investor
+    function buyBricks(uint256 tokenId, uint256 brickAmount) public nonReentrant {
+        PropertyData storage prop = properties[tokenId];
+        require(prop.totalBricks > 0, "Property does not exist");
+        require(prop.status == PropertyStatus.ACTIVE, "Property not active for investment");
+        require(block.timestamp <= prop.otpDeadline, "OTP period expired - funding failed");
+        require(brickAmount >= 100, "Minimum 100 bricks");
+        require(brickAmount <= prop.bricksAvailable, "Insufficient bricks available");
+
+        address trustWallet = propertyTrustWallet[tokenId];
+        require(trustWallet != address(0), "Trust wallet not set");
+
+        uint256 cost = brickAmount * prop.pricePerBrick;
+        require(brkToken.allowance(_msgSender(), address(this)) >= cost, "Insufficient BRK allowance");
+
+        // Transfer BRK to trust wallet
+        brkToken.transferFrom(_msgSender(), trustWallet, cost);
+
+        // Transfer NFTs from trust wallet to investor
+        // Using internal _safeTransferFrom to bypass approval requirements
+        _safeTransferFrom(trustWallet, _msgSender(), tokenId, brickAmount, "");
+
+        // Update available bricks
+        prop.bricksAvailable -= brickAmount;
+
+        // Track investor
+        bool isFirstInvestment = !isInvestor[tokenId][_msgSender()];
+        if (isFirstInvestment) {
+            propertyInvestors[tokenId].push(_msgSender());
+            isInvestor[tokenId][_msgSender()] = true;
+
+            // Gas sponsorship: send ETH stipend to new investors
+            if (gasSponsorshipEnabled &&
+                _msgSender().balance < minGasBalance &&
+                address(this).balance >= gasStipend) {
+                payable(_msgSender()).transfer(gasStipend);
+                emit GasStipendSent(_msgSender(), gasStipend);
+            }
+        }
+
+        // Check if all bricks sold - mark as FUNDED (deal complete)
+        if (prop.bricksAvailable == 0) {
+            prop.status = PropertyStatus.FUNDED;
+            emit PropertyFunded(tokenId);
+        }
+
+        emit BricksPurchased(tokenId, _msgSender(), brickAmount);
+    }
+
+    // Get investor list for distribution
+    function getInvestorList(uint256 tokenId) public view returns (address[] memory) {
+        return propertyInvestors[tokenId];
+    }
+
+    // Get investor's brick balance
+    function getInvestorBricks(uint256 tokenId, address investor) public view returns (uint256) {
+        return balanceOf(investor, tokenId);
+    }
+
+    // Calculate investor's share (basis points)
+    function getInvestorShareBasisPoints(uint256 tokenId, address investor) public view returns (uint256) {
+        uint256 totalBricks = properties[tokenId].totalBricks;
+        uint256 investorBricks = balanceOf(investor, tokenId);
+        if (totalBricks == 0) return 0;
+        return (investorBricks * 10000) / totalBricks;
+    }
+
+    // Calculate payment for investor
+    function calculateInvestorPayment(uint256 tokenId, address investor, uint256 totalAmount)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 totalBricks = properties[tokenId].totalBricks;
+        uint256 investorBricks = balanceOf(investor, tokenId);
+        if (totalBricks == 0) return 0;
+        return (totalAmount * investorBricks) / totalBricks;
+    }
+
+    // Get property metadata URI
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        return propertyMetadataURIs[tokenId];
+    }
+
+    // Get all properties
+    function getAllProperties() public view returns (uint256[] memory) {
+        uint256 totalProperties = _tokenIds.current();
+        uint256[] memory tokenIds = new uint256[](totalProperties);
+
+        for (uint256 i = 0; i < totalProperties; i++) {
+            tokenIds[i] = i + 1;
+        }
+
+        return tokenIds;
+    }
+
+    // Extend OTP period (only property creator with new OTP document)
+    function extendOTP(uint256 tokenId, uint256 additionalDays) public nonReentrant {
+        require(_msgSender() == propertyCreator[tokenId], "Only property creator can extend OTP");
+        PropertyData storage prop = properties[tokenId];
+        require(prop.status == PropertyStatus.ACTIVE, "Property must be active");
+        require(additionalDays > 0 && additionalDays <= 90, "Extension must be 1-90 days");
+
+        uint256 newDeadline = prop.otpDeadline + (additionalDays * 1 days);
+        prop.otpDeadline = newDeadline;
+
+        emit OTPExtended(tokenId, newDeadline);
+    }
+
+    // Mark property as failed if OTP expired without full funding
+    function markAsFailed(uint256 tokenId) public {
+        PropertyData storage prop = properties[tokenId];
+        require(prop.status == PropertyStatus.ACTIVE, "Property must be active");
+        require(block.timestamp > prop.otpDeadline, "OTP period not expired yet");
+        require(prop.bricksAvailable > 0, "Property already fully funded");
+
+        prop.status = PropertyStatus.FAILED;
+        emit PropertyFailed(tokenId);
+    }
+
+    // Investor claims refund if funding failed
+    function claimRefund(uint256 tokenId) public nonReentrant {
+        PropertyData storage prop = properties[tokenId];
+        require(prop.status == PropertyStatus.FAILED, "Property not failed - no refunds");
+
+        address trustWallet = propertyTrustWallet[tokenId];
+        require(trustWallet != address(0), "Trust wallet not set");
+
+        uint256 investorBricks = balanceOf(_msgSender(), tokenId);
+        require(investorBricks > 0, "No bricks to refund");
+
+        // Calculate refund amount
+        uint256 refundAmount = investorBricks * prop.pricePerBrick;
+
+        // Burn investor's bricks
+        _burn(_msgSender(), tokenId, investorBricks);
+
+        // Transfer BRK back to investor from trust wallet
+        brkToken.transferFrom(trustWallet, _msgSender(), refundAmount);
+
+        emit RefundClaimed(tokenId, _msgSender(), refundAmount);
+    }
+
+    // Buyer claims refund if funding failed
+    function buyerClaimRefund(uint256 tokenId) public nonReentrant {
+        PropertyData storage prop = properties[tokenId];
+        require(prop.status == PropertyStatus.FAILED, "Property not failed - no refunds");
+        require(_msgSender() == propertyBuyer[tokenId], "Only buyer can claim");
+
+        address trustWallet = propertyTrustWallet[tokenId];
+        require(trustWallet != address(0), "Trust wallet not set");
+
+        uint256 buyerBricks = balanceOf(_msgSender(), tokenId);
+        require(buyerBricks > 0, "No deposit to refund");
+
+        // Calculate refund (buyer's deposit)
+        uint256 refundAmount = prop.depositAmount;
+
+        // Burn buyer's bricks
+        _burn(_msgSender(), tokenId, buyerBricks);
+
+        // Transfer BRK back to buyer from trust wallet
+        brkToken.transferFrom(trustWallet, _msgSender(), refundAmount);
+
+        emit RefundClaimed(tokenId, _msgSender(), refundAmount);
+    }
+
+    // Get property data
+    function getPropertyData(uint256 tokenId) public view returns (PropertyData memory) {
+        return properties[tokenId];
+    }
+
+    // Check if address is the buyer (homebuyer, not investor)
+    function isBuyer(uint256 tokenId, address account) public view returns (bool) {
+        return propertyBuyer[tokenId] == account;
+    }
+
+    // Get buyer address for a property
+    function getBuyer(uint256 tokenId) public view returns (address) {
+        return propertyBuyer[tokenId];
+    }
+
+    // Get trust wallet address for a property
+    function getTrustWallet(uint256 tokenId) public view returns (address) {
+        return propertyTrustWallet[tokenId];
+    }
+
+    // Check if property is fully funded and ready for payments
+    function isFunded(uint256 tokenId) public view returns (bool) {
+        return properties[tokenId].status == PropertyStatus.FUNDED;
+    }
+}
